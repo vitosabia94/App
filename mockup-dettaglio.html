@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dettaglio Progetto - Rendering</title>
+<style>
+  :root{
+    --green:#4caf50;
+    --bg:#f3f2f1;
+    --card:#fff;
+    --border:#e1dfdd;
+    --text:#323130;
+    --muted:#605e5c;
+    --blue:#0078d4;
+    --amber:#ffaa44;
+  }
+  *{box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif;margin:0;padding:0;}
+  body{background:#605e5c;padding:30px;display:flex;flex-direction:column;align-items:center;}
+  h1{color:#fff;font-weight:600;margin-bottom:4px;}
+  p.sub{color:#d6d6d6;margin-bottom:24px;font-size:14px;}
+
+  .frame{width:820px;background:var(--bg);border-radius:10px;overflow:hidden;
+         box-shadow:0 12px 40px rgba(0,0,0,.4);}
+
+  /* header */
+  .header{background:var(--green);height:56px;display:flex;align-items:center;
+          gap:14px;padding:0 18px;color:#fff;}
+  .back{font-size:24px;cursor:pointer;}
+  .htitle{font-size:18px;font-weight:600;}
+
+  /* body */
+  .body{padding:16px;}
+
+  /* info card */
+  .infocard{background:var(--card);border-radius:8px;border:1px solid var(--border);
+            padding:18px;margin-bottom:14px;}
+  .infocard .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;}
+  .row{font-size:13px;color:var(--text);padding:3px 0;}
+  .row .lbl{color:var(--muted);}
+  .row b{font-weight:600;}
+  .badge{display:inline-block;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:600;
+         background:#dff6dd;color:#107c10;}
+  .desc{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);
+        font-size:12.5px;color:var(--muted);line-height:1.55;}
+  .folderbtn{display:inline-block;margin-top:16px;background:var(--blue);color:#fff;
+             border:none;border-radius:4px;padding:9px 16px;font-size:13px;
+             font-weight:600;cursor:pointer;}
+
+  /* sezioni reporting / impact (anteprima passo 10) */
+  .sectitle{font-size:14px;font-weight:600;color:var(--text);margin:6px 2px 10px;
+            display:flex;align-items:center;gap:8px;}
+  .sectitle .pill{font-size:11px;font-weight:600;color:#fff;background:var(--muted);
+                  border-radius:10px;padding:1px 8px;}
+  .future{opacity:.55;}
+  .future .tag{position:absolute;top:10px;right:12px;font-size:10px;background:#fff4ce;
+               color:#8a6d00;padding:2px 8px;border-radius:8px;font-weight:600;}
+  .upd{position:relative;background:var(--card);border:1px solid var(--border);
+       border-left:3px solid var(--green);border-radius:6px;padding:12px 14px;margin-bottom:10px;}
+  .upd .month{font-size:12px;font-weight:600;color:var(--green);margin-bottom:5px;}
+  .upd .txt{font-size:12.5px;color:var(--text);line-height:1.5;}
+  .impact{border-left-color:var(--amber);}
+  .impact .month{color:#b8860b;}
+</style>
+</head>
+<body>
+  <h1>Dettaglio Progetto</h1>
+  <p class="sub">Rendering della schermata <code style="color:#fff;">scrDettaglio</code> dopo il Passo 9</p>
+
+  <div class="frame">
+    <!-- HEADER -->
+    <div class="header">
+      <span class="back">←</span>
+      <span class="htitle">Modular MyGo lines manufacturing in Nantong</span>
+    </div>
+
+    <div class="body">
+      <!-- INFO CARD (Passo 9) -->
+      <div class="infocard">
+        <div class="grid">
+          <div class="row"><span class="lbl">Project Leader:</span> <b>Francesco De Luca</b></div>
+          <div class="row"><span class="lbl">Sponsor:</span> <b>Marco Rossi</b></div>
+          <div class="row"><span class="lbl">Plant:</span> <b>Nantong</b></div>
+          <div class="row"><span class="lbl">Status:</span> <span class="badge">Active</span></div>
+          <div class="row"><span class="lbl">Priorità:</span> <b>High</b></div>
+          <div class="row"><span class="lbl">Next Gate:</span> <b>Gate 3 (15/09/2026)</b></div>
+          <div class="row"><span class="lbl">Periodo:</span> <b>01/03/2026 → 31/12/2026</b></div>
+        </div>
+        <div class="desc">
+          Progetto per la realizzazione di linee modulari MyGo presso lo stabilimento di
+          Nantong. Obiettivo: incrementare la capacità produttiva e standardizzare i
+          processi di converting su nuove configurazioni di prodotto.
+        </div>
+        <button class="folderbtn">📁 Apri cartella progetto</button>
+      </div>
+
+      <!-- REPORTING (anteprima Passo 10) -->
+      <div class="sectitle">📈 Reporting mensile <span class="pill">prossimo passo</span></div>
+      <div class="future" style="position:relative;">
+        <span class="tag">Passo 10</span>
+        <div class="upd">
+          <div class="month">Maggio 2026</div>
+          <div class="txt">Completata installazione moduli 1-3. Avviati test funzionali.
+            Avanzamento al 60%, in linea con il piano.</div>
+        </div>
+        <div class="upd">
+          <div class="month">Aprile 2026</div>
+          <div class="txt">Ordinati componenti critici. Kick-off con il team di stabilimento
+            effettuato. Nessuna criticità rilevante.</div>
+        </div>
+      </div>
+
+      <!-- IMPACT (anteprima Passo 10) -->
+      <div class="sectitle" style="margin-top:18px;">🎯 Impact <span class="pill">prossimo passo</span></div>
+      <div class="future" style="position:relative;">
+        <span class="tag">Passo 10</span>
+        <div class="upd impact">
+          <div class="month">Q2 2026 — Produttività</div>
+          <div class="txt">Stima incremento capacità +18% sulla linea pilota.</div>
+        </div>
+        <div class="upd impact">
+          <div class="month">Q2 2026 — Costi</div>
+          <div class="txt">Riduzione scarti di processo del 7% rispetto al baseline.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

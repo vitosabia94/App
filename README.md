@@ -3,7 +3,14 @@
 Web app per la gestione delle finanze di **F.C. Istria** (calcio) e **Istria Volley** (pallavolo):
 due gestioni separate ma con **cassa unica**.
 
-## Come si usa
+## Due versioni
+- **`index.html`** — versione **locale**: apri il file nel browser, nessuna installazione,
+  funziona anche offline. I dati restano su quel dispositivo.
+- **`cloud.html`** — versione **condivisa online** (Supabase): più persone con login
+  personale vedono e modificano la **stessa cassa** in tempo reale. Configurazione una
+  tantum descritta in **`SETUP-SUPABASE.md`**.
+
+## Come si usa (versione locale)
 Apri il file **`index.html`** con un qualsiasi browser (computer o telefono).
 Non serve installare nulla e funziona anche offline.
 

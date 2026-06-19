@@ -248,7 +248,7 @@
       <div class="toolbar">
         <button class="btn green" onclick="exportJSON()">⬇️ Esporta backup (JSON)</button>
         <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importa backup</button>
-        <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importJSON(event)">
+        <input type="file" id="importFile" accept=".json,application/json,*/*" style="display:none" onchange="importJSON(event)">
       </div>
       <div class="toolbar">
         <button class="btn ghost" onclick="exportCSV()">📄 Esporta movimenti (CSV)</button>
@@ -832,9 +832,20 @@ function saveFields(){ db.fields=[...document.querySelectorAll(".fEdit")].map(x=
 
 /* ============ BACKUP ============ */
 function exportJSON(){ dl(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),"gestione-istria-backup-"+todayISO()+".json"); }
-function importJSON(ev){
-  const f=ev.target.files[0]; if(!f)return; const r=new FileReader();
-  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.moves)throw 0; db=migrate({moves:d.moves||[],players:d.players||[],events:d.events||[],fields:d.fields||["Campo Comunale"]}); save(); renderAll(); alert("Backup importato."); }catch(e){ alert("File non valido."); } };
+async function importJSON(ev){
+  const f=ev.target.files[0]; if(!f){ alert("Nessun file selezionato."); return; }
+  const r=new FileReader();
+  r.onerror=()=>alert("Errore nella lettura del file.");
+  r.onload=async()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!d.players && !d.moves) throw new Error("Struttura non valida");
+      db=migrate({moves:d.moves||[],players:d.players||[],events:d.events||[],fields:d.fields||["Campo Comunale","Palestra","Campo allenamento"]});
+      await save();
+      renderAll();
+      alert("Backup importato. Giocatori: "+db.players.length+", Movimenti: "+db.moves.length);
+    }catch(e){ alert("Errore: "+(e.message||"File non valido.")); }
+  };
   r.readAsText(f); ev.target.value="";
 }
 function exportCSV(){

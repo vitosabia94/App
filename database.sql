@@ -32,7 +32,8 @@ CREATE TABLE giocatori (
     squadra_id       VARCHAR(20)  NOT NULL REFERENCES squadre(id),
     genere           CHAR(1)      NOT NULL DEFAULT 'M' CHECK (genere IN ('M','F')),
     quota_mensile    DECIMAL(10,2) NOT NULL DEFAULT 0,
-    quota_iscrizione DECIMAL(10,2) NOT NULL DEFAULT 0
+    quota_iscrizione DECIMAL(10,2) NOT NULL DEFAULT 0,
+    certificato_scadenza DATE                          -- scadenza certificato medico (NULL = mancante)
 );
 
 -- ---------- ISCRIZIONI (una tantum a inizio stagione) ----------
@@ -140,3 +141,15 @@ SELECT
 FROM giocatori g
 LEFT JOIN pagamenti_quote p ON p.giocatore_id = g.id
 GROUP BY g.id, g.nome, g.squadra_id, g.quota_mensile;
+
+-- Stato certificati medici (sintassi SQLite per le date; adattare a CURRENT_DATE su altri DB)
+CREATE VIEW v_certificati AS
+SELECT
+    id, nome, squadra_id, certificato_scadenza,
+    CASE
+        WHEN certificato_scadenza IS NULL                              THEN 'mancante'
+        WHEN certificato_scadenza <  DATE('now')                      THEN 'scaduto'
+        WHEN certificato_scadenza <= DATE('now','+30 day')            THEN 'in_scadenza'
+        ELSE 'valido'
+    END AS stato
+FROM giocatori;

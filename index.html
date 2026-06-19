@@ -16,6 +16,8 @@
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;-webkit-text-size-adjust:100%}
   header{background:var(--navy);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
   header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px}
+  .logo{height:44px;width:44px;border-radius:50%;object-fit:contain;background:#fff;flex:0 0 auto}
+  .logo-lg{height:96px;width:96px;border-radius:50%;object-fit:contain;margin-bottom:6px}
   header .sub{font-size:12px;color:#9fb6cb;margin-top:2px}
   .grow{flex:1}
   .scope{display:flex;background:rgba(255,255,255,.1);border-radius:10px;padding:3px;gap:2px}
@@ -47,6 +49,10 @@
   .pill.standard{background:#e7eef6;color:#2c5a86}
   .pill.straordinaria{background:#fbe8dd;color:var(--volley-dark)}
   .pill.accessoria{background:#efe7f6;color:#6b4b8a}
+  .pill.ok{background:#e3f6ec;color:var(--in)}
+  .pill.warn{background:#fff5e0;color:#b9852b}
+  .pill.bad{background:#fde6e6;color:var(--out)}
+  .pill.none{background:#eef1f4;color:#8a96a3}
   table{width:100%;border-collapse:collapse}
   th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
   th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
@@ -112,7 +118,7 @@
 <!-- LOCK SCREEN -->
 <div id="lock">
   <div class="box">
-    <div style="font-size:42px">🐦‍⬛</div>
+    <img src="logo.png" alt="Logo" class="logo-lg" onerror="logoErr(this)">
     <h1>Gestione Istria</h1>
     <p id="lockMsg">Inserisci la password</p>
     <input type="password" id="lockPwd" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')lockSubmit()">
@@ -124,8 +130,9 @@
 
 <div id="app" class="app-hidden">
 <header>
+  <img src="logo.png" alt="Logo" class="logo" onerror="logoErr(this)">
   <div>
-    <h1>🐦‍⬛ Gestione Istria</h1>
+    <h1>Gestione Istria</h1>
     <div class="sub">F.C. Istria &amp; Istria Volley — cassa unica</div>
   </div>
   <div class="grow"></div>
@@ -141,6 +148,7 @@
   <button data-view="dashboard" class="active">Riepilogo</button>
   <button data-view="movimenti">Movimenti</button>
   <button data-view="giocatori">Giocatori &amp; Quote</button>
+  <button data-view="certificati">Certificati</button>
   <button data-view="calendario">Calendario</button>
   <button data-view="impostazioni">Backup</button>
 </nav>
@@ -192,6 +200,23 @@
     </div>
     <div class="hint" style="margin-bottom:8px">Tocca una casella del mese per segnare/annullare il pagamento. Ogni pagamento entra automaticamente in cassa come "Quote giocatori".</div>
     <div id="playersGrid"></div>
+  </section>
+
+  <!-- CERTIFICATI MEDICI -->
+  <section class="view" id="view-certificati">
+    <div class="toolbar">
+      <div id="certSummary"></div>
+      <div class="grow"></div>
+      <select id="filterCert" style="width:auto" onchange="renderCerts()">
+        <option value="all">Tutti</option>
+        <option value="scaduto">Scaduti</option>
+        <option value="scadenza">In scadenza</option>
+        <option value="valido">Validi</option>
+        <option value="mancante">Mancanti</option>
+      </select>
+    </div>
+    <div class="hint" style="margin-bottom:8px">Imposta la data di scadenza del certificato medico di ogni giocatore. Gli avvisi diventano gialli a 30 giorni dalla scadenza e rossi quando è scaduto.</div>
+    <div id="certList"></div>
   </section>
 
   <!-- CALENDARIO -->
@@ -254,6 +279,14 @@ const CLASSI={standard:"Standard",straordinaria:"Straordinaria",accessoria:"Acce
 const QUOTA_MENSILE={M:30,F:20};      // Uomini 30€/mese, Donne 20€/mese
 const QUOTA_ISCRIZIONE={M:20,F:50};   // Iscrizione: Uomini 20€, Donne 50€ (una tantum a inizio stagione)
 const MONTHS=["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+
+/* ============ LOGO ============ */
+function logoErr(img){
+  if(img.dataset.tried!=="svg"){ img.dataset.tried="svg"; img.src="logo.svg"; return; }
+  const big=img.classList.contains("logo-lg");
+  const s=document.createElement("span"); s.textContent="🐦‍⬛"; s.style.fontSize=big?"60px":"28px";
+  img.replaceWith(s);
+}
 
 /* ============ AUTH ============ */
 async function hashPwd(s){
@@ -339,6 +372,7 @@ function migrate(d){
     if(p.quotaMensile==null) p.quotaMensile=p.quota!=null?p.quota:QUOTA_MENSILE[p.gender];
     if(p.quotaIscrizione==null) p.quotaIscrizione=QUOTA_ISCRIZIONE[p.gender];
     if(!p.iscrizioni) p.iscrizioni={};
+    if(p.certScadenza==null) p.certScadenza="";
   });
   d.events.forEach(e=>{ if(e.kind==="partita"&&!e.scorers) e.scorers=[]; });
   return d;
@@ -570,6 +604,7 @@ function openPlayer(id){
       <label class="field">Quota mensile (€)<input type="number" id="pQuota" step="0.01" min="0" value="${p.quotaMensile}"></label>
       <label class="field">Iscrizione (€)<input type="number" id="pIscr" step="0.01" min="0" value="${p.quotaIscrizione}"></label>
     </div>
+    <label class="field">Scadenza certificato medico<input type="date" id="pCert" value="${p.certScadenza||""}"></label>
     <p class="hint">Il genere imposta le quote standard (Uomo 30€/mese + 20€ iscr. · Donna 20€/mese + 50€ iscr.). Puoi comunque modificarle a mano.</p>
     <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
 }
@@ -581,11 +616,48 @@ function applyGenderDefaults(){
 function savePlayer(){
   const name=document.getElementById("pName").value.trim();
   if(!name){ alert("Inserisci il nome."); return; }
-  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0};
+  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,certScadenza:document.getElementById("pCert").value||""};
   if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},iscrizioni:{},...o});
   save(); closeModal(); renderAll();
 }
 function delPlayer(id){ if(confirm("Eliminare il giocatore? (i movimenti già registrati restano)")){ db.players=db.players.filter(p=>p.id!==id); save(); closeModal(); renderAll(); } }
+
+/* ============ CERTIFICATI MEDICI ============ */
+function certStatus(dateStr){
+  if(!dateStr) return {key:"mancante",label:"Mancante",cls:"none",days:null};
+  const today=new Date(todayISO()+"T00:00"), exp=new Date(dateStr+"T00:00");
+  const days=Math.round((exp-today)/86400000);
+  if(days<0)  return {key:"scaduto",  label:"Scaduto",     cls:"bad", days};
+  if(days<=30)return {key:"scadenza", label:"In scadenza", cls:"warn",days};
+  return {key:"valido", label:"Valido", cls:"ok", days};
+}
+function renderCerts(){
+  const f=document.getElementById("filterCert").value;
+  let list=db.players.filter(p=>inScope(p.team));
+  const counts={scaduto:0,scadenza:0,valido:0,mancante:0};
+  list.forEach(p=>counts[certStatus(p.certScadenza).key]++);
+  document.getElementById("certSummary").innerHTML=
+    `<span class="pill bad" style="margin-right:6px">${counts.scaduto} scaduti</span>
+     <span class="pill warn" style="margin-right:6px">${counts.scadenza} in scadenza</span>
+     <span class="pill ok" style="margin-right:6px">${counts.valido} validi</span>
+     <span class="pill none">${counts.mancante} mancanti</span>`;
+  list=list.filter(p=>f==="all"||certStatus(p.certScadenza).key===f)
+           .sort((a,b)=>{ const A=a.certScadenza||"9999",B=b.certScadenza||"9999"; return A.localeCompare(B); });
+  const el=document.getElementById("certList");
+  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore in questo gruppo.</div></div>`; return; }
+  el.innerHTML=`<div class="card" style="padding:6px 8px"><table><thead><tr><th>Giocatore</th><th>Squadra</th><th>Scadenza</th><th>Stato</th></tr></thead><tbody>${
+    list.map(p=>{ const s=certStatus(p.certScadenza);
+      const extra=s.days==null?"":(s.days<0?`scaduto da ${-s.days} gg`:`tra ${s.days} gg`);
+      return `<tr>
+        <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?"♀":"♂"}</span></td>
+        <td>${TEAMS[p.team].name}</td>
+        <td><input type="date" value="${p.certScadenza}" style="width:auto;margin:0;padding:6px 8px" onchange="setCert('${p.id}',this.value)"></td>
+        <td><span class="pill ${s.cls}">${s.label}</span> <span class="hint">${extra}</span></td>
+      </tr>`;
+    }).join("")
+  }</tbody></table></div>`;
+}
+function setCert(pid,val){ const p=db.players.find(x=>x.id===pid); if(p){ p.certScadenza=val; save(); renderCerts(); } }
 
 /* ============ CALENDARIO ============ */
 function renderEvents(){
@@ -705,9 +777,9 @@ function loadDemo(){
   db={
     fields:["Campo Comunale","Palestra Centrale","Campo allenamento Nord"],
     players:[
-      {id:p1,name:"Mario Rossi",team:"calcio",gender:"M",quotaMensile:30,quotaIscrizione:20,payments:{},iscrizioni:{}},
-      {id:p2,name:"Luca Bianchi",team:"calcio",gender:"M",quotaMensile:30,quotaIscrizione:20,payments:{},iscrizioni:{}},
-      {id:p3,name:"Giulia Verdi",team:"volley",gender:"F",quotaMensile:20,quotaIscrizione:50,payments:{},iscrizioni:{}}
+      {id:p1,name:"Mario Rossi",team:"calcio",gender:"M",quotaMensile:30,quotaIscrizione:20,payments:{},iscrizioni:{},certScadenza:new Date(y.getFullYear(),y.getMonth()+5,10).toISOString().slice(0,10)},
+      {id:p2,name:"Luca Bianchi",team:"calcio",gender:"M",quotaMensile:30,quotaIscrizione:20,payments:{},iscrizioni:{},certScadenza:new Date(y.getFullYear(),y.getMonth(),y.getDate()+15).toISOString().slice(0,10)},
+      {id:p3,name:"Giulia Verdi",team:"volley",gender:"F",quotaMensile:20,quotaIscrizione:50,payments:{},iscrizioni:{},certScadenza:new Date(y.getFullYear(),y.getMonth()-1,5).toISOString().slice(0,10)}
     ],
     events:[
       {id:uid(),kind:"allenamento",team:"calcio",date:todayISO(),time:"19:00",field:"Campo allenamento Nord",opponent:"",note:""},
@@ -732,7 +804,7 @@ function loadDemo(){
 }
 
 /* ============ RENDER ============ */
-function renderAll(){ renderDashboard(); renderMoves(); renderPlayers(); renderEvents(); }
+function renderAll(){ renderDashboard(); renderMoves(); renderPlayers(); renderCerts(); renderEvents(); }
 window.addEventListener("resize",()=>{ if(document.getElementById("view-dashboard").classList.contains("active")) renderDashboard(); });
 initLock();
 </script>

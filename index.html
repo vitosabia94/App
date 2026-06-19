@@ -434,7 +434,7 @@ function renderClassBreak(){
   }</tbody></table>`;
 }
 function drawMonthly(){
-  const cv=document.getElementById("chartMonthly"); if(!cv)return; const ctx=cv.getContext("2d");
+  const cv=document.getElementById("chartMonthly"); if(!cv||!cv.clientWidth)return; const ctx=cv.getContext("2d");
   const W=cv.width=cv.clientWidth,H=cv.height; ctx.clearRect(0,0,W,H);
   const now=new Date(),months=[]; for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({y:d.getFullYear(),m:d.getMonth(),inc:0,out:0}); }
   db.moves.forEach(mv=>{ if(!inScope(mv.team))return; const d=new Date(mv.date+"T00:00"); const s=months.find(x=>x.y===d.getFullYear()&&x.m===d.getMonth()); if(s){ if(mv.type==="entrata")s.inc+=mv.amount; else s.out+=mv.amount; } });
@@ -445,7 +445,7 @@ function drawMonthly(){
     ctx.fillStyle="#6b7785"; ctx.font="11px sans-serif"; ctx.textAlign="center"; ctx.fillText(MONTHS[mo.m],bx+cw/2,H-8); });
 }
 function drawCategoryChart(cid,lid,type,pal){
-  const cv=document.getElementById(cid); if(!cv)return; const ctx=cv.getContext("2d");
+  const cv=document.getElementById(cid); if(!cv||!cv.clientWidth)return; const ctx=cv.getContext("2d");
   const W=cv.width=cv.clientWidth,H=cv.height; ctx.clearRect(0,0,W,H);
   const map={}; db.moves.forEach(m=>{ if(m.type===type&&inScope(m.team))map[m.category]=(map[m.category]||0)+m.amount; });
   const ent=Object.entries(map).sort((a,b)=>b[1]-a[1]),leg=document.getElementById(lid);

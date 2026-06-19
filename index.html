@@ -7,7 +7,7 @@
 <title>Gestione Istria — F.C. Istria & Istria Volley</title>
 <style>
   :root{
-    --calcio:#1b7f3b;--calcio-dark:#0f5526;--volley:#c8541b;--volley-dark:#8f3a11;
+    --calcio:#f2c200;--calcio-dark:#1a1a1a;--volley:#c8541b;--volley-dark:#8f3a11;
     --bg:#f3f5f8;--card:#ffffff;--ink:#1d2733;--muted:#6b7785;--line:#e3e8ee;
     --in:#1b9e54;--out:#d23b3b;--navy:#0d2b45;--shadow:0 2px 10px rgba(13,43,69,.08);
   }
@@ -39,10 +39,10 @@
   .stat .value{font-size:28px;font-weight:800;margin-top:6px}
   .stat .meta{font-size:12px;opacity:.9;margin-top:6px}
   .stat.total{background:linear-gradient(135deg,var(--navy),#16456b)}
-  .stat.calcio{background:linear-gradient(135deg,var(--calcio),var(--calcio-dark))}
+  .stat.calcio{background:linear-gradient(135deg,#111,#c9a200)}
   .stat.volley{background:linear-gradient(135deg,var(--volley),var(--volley-dark))}
   .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
-  .pill.calcio{background:#e4f3e9;color:var(--calcio-dark)}
+  .pill.calcio{background:#fdf2bf;color:var(--calcio-dark)}
   .pill.volley{background:#fbe8dd;color:var(--volley-dark)}
   .pill.standard{background:#e7eef6;color:#2c5a86}
   .pill.straordinaria{background:#fbe8dd;color:var(--volley-dark)}
@@ -112,7 +112,7 @@
 <!-- LOCK SCREEN -->
 <div id="lock">
   <div class="box">
-    <div style="font-size:42px">⚽🏐</div>
+    <div style="font-size:42px">🐦‍⬛🏐</div>
     <h1>Gestione Istria</h1>
     <p id="lockMsg">Inserisci la password</p>
     <input type="password" id="lockPwd" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')lockSubmit()">
@@ -125,13 +125,13 @@
 <div id="app" class="app-hidden">
 <header>
   <div>
-    <h1>⚽🏐 Gestione Istria</h1>
+    <h1>🐦‍⬛🏐 Gestione Istria</h1>
     <div class="sub">F.C. Istria &amp; Istria Volley — cassa unica</div>
   </div>
   <div class="grow"></div>
   <div class="scope" id="scope">
     <button data-scope="all" class="active">Tutte</button>
-    <button data-scope="calcio">⚽ Calcio</button>
+    <button data-scope="calcio">🐦‍⬛ Calcio</button>
     <button data-scope="volley">🏐 Volley</button>
   </div>
   <button class="lockbtn" onclick="lockNow()" title="Blocca">🔒</button>
@@ -245,7 +245,7 @@
 <script>
 /* ============ CONFIG ============ */
 const KEY="gestione_istria_v2", AUTHKEY="gestione_istria_auth";
-const TEAMS={calcio:{name:"F.C. Istria",emoji:"⚽",cls:"calcio"},volley:{name:"Istria Volley",emoji:"🏐",cls:"volley"}};
+const TEAMS={calcio:{name:"F.C. Istria",emoji:"🐦‍⬛",cls:"calcio"},volley:{name:"Istria Volley",emoji:"🏐",cls:"volley"}};
 const CATS={
   entrata:["Quote giocatori","Sponsor","Incasso partite","Eventi/Tornei","Contributi","Altro"],
   uscita:["Arbitri","Affitto campo","Attrezzatura","Divise","Iscrizioni","Trasferte","Materiale sanitario","Cancelleria","Altro"]
@@ -374,7 +374,7 @@ function renderDashboard(){
   const a=totals(null),c=totals("calcio"),v=totals("volley");
   document.getElementById("stats").innerHTML=`
     <div class="stat total"><div class="label">Saldo cassa unica</div><div class="value">${eur(a.bal)}</div><div class="meta">Entrate ${eur(a.inc)} · Uscite ${eur(a.out)}</div></div>
-    <div class="stat calcio"><div class="label">⚽ F.C. Istria</div><div class="value">${eur(c.bal)}</div><div class="meta">Entrate ${eur(c.inc)} · Uscite ${eur(c.out)}</div></div>
+    <div class="stat calcio"><div class="label">🐦‍⬛ F.C. Istria</div><div class="value">${eur(c.bal)}</div><div class="meta">Entrate ${eur(c.inc)} · Uscite ${eur(c.out)}</div></div>
     <div class="stat volley"><div class="label">🏐 Istria Volley</div><div class="value">${eur(v.bal)}</div><div class="meta">Entrate ${eur(v.inc)} · Uscite ${eur(v.out)}</div></div>`;
   drawMonthly();
   renderClassBreak();
@@ -442,7 +442,7 @@ function openMove(id){
       <input type="radio" name="mtype" id="mt-out" class="v-out" value="uscita" ${m.type==="uscita"?"checked":""} onchange="swapCats()"><label for="mt-out">－ Uscita</label>
     </div><div style="height:12px"></div>
     <div class="row2">
-      <label class="field">Squadra<select id="mTeam"><option value="calcio" ${m.team==="calcio"?"selected":""}>⚽ F.C. Istria</option><option value="volley" ${m.team==="volley"?"selected":""}>🏐 Istria Volley</option></select></label>
+      <label class="field">Squadra<select id="mTeam"><option value="calcio" ${m.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${m.team==="volley"?"selected":""}>🏐 Istria Volley</option></select></label>
       <label class="field">Tipologia<select id="mClasse">${Object.keys(CLASSI).map(k=>`<option value="${k}" ${(m.classe||'standard')===k?"selected":""}>${CLASSI[k]}</option>`).join("")}</select></label>
     </div>
     <div class="row2">
@@ -524,7 +524,7 @@ function openPlayer(id){
   const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",quotaMensile:""};
   showModal(`<h2>${id?"Modifica":"Nuovo"} giocatore</h2>
     <label class="field">Nome e cognome<input type="text" id="pName" value="${esc(p.name)}" placeholder="es. Mario Rossi"></label>
-    <label class="field">Squadra<select id="pTeam"><option value="calcio" ${p.team==="calcio"?"selected":""}>⚽ F.C. Istria</option><option value="volley" ${p.team==="volley"?"selected":""}>🏐 Istria Volley</option></select></label>
+    <label class="field">Squadra<select id="pTeam"><option value="calcio" ${p.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${p.team==="volley"?"selected":""}>🏐 Istria Volley</option></select></label>
     <label class="field">Quota mensile (€)<input type="number" id="pQuota" step="0.01" min="0" value="${p.quotaMensile}"></label>
     <p class="hint">I pagamenti mensili si segnano dalla griglia toccando le caselle dei mesi.</p>
     <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
@@ -562,7 +562,7 @@ function openEvent(id){
   showModal(`<h2>${id?"Modifica":"Nuovo"} evento</h2>
     <div class="seg"><input type="radio" name="ekind" id="ek-a" class="v-team" value="allenamento" ${e.kind==="allenamento"?"checked":""} onchange="toggleOpp()"><label for="ek-a">🏃 Allenamento</label>
     <input type="radio" name="ekind" id="ek-p" class="v-team" value="partita" ${e.kind==="partita"?"checked":""} onchange="toggleOpp()"><label for="ek-p">🏆 Partita</label></div><div style="height:12px"></div>
-    <label class="field">Squadra<select id="eTeam"><option value="calcio" ${e.team==="calcio"?"selected":""}>⚽ F.C. Istria</option><option value="volley" ${e.team==="volley"?"selected":""}>🏐 Istria Volley</option></select></label>
+    <label class="field">Squadra<select id="eTeam"><option value="calcio" ${e.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${e.team==="volley"?"selected":""}>🏐 Istria Volley</option></select></label>
     <div class="row2"><label class="field">Data<input type="date" id="eDate" value="${e.date}"></label><label class="field">Ora<input type="time" id="eTime" value="${e.time}"></label></div>
     <label class="field">Campo / Luogo<select id="eField">${fo}</select></label>
     <label class="field" id="oppWrap" style="${e.kind==="partita"?"":"display:none"}">Avversario<input type="text" id="eOpp" value="${esc(e.opponent)}"></label>

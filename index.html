@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0d2b45" />
+<title>Gestione Istria — F.C. Istria & Istria Volley</title>
+<style>
+  :root{
+    --calcio:#1b7f3b;
+    --calcio-dark:#0f5526;
+    --volley:#c8541b;
+    --volley-dark:#8f3a11;
+    --bg:#f3f5f8;
+    --card:#ffffff;
+    --ink:#1d2733;
+    --muted:#6b7785;
+    --line:#e3e8ee;
+    --in:#1b9e54;
+    --out:#d23b3b;
+    --navy:#0d2b45;
+    --shadow:0 2px 10px rgba(13,43,69,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:15px;-webkit-text-size-adjust:100%;
+  }
+  header{
+    background:var(--navy);color:#fff;padding:14px 16px;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    position:sticky;top:0;z-index:50;box-shadow:var(--shadow);
+  }
+  header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px}
+  header .sub{font-size:12px;color:#9fb6cb;margin-top:2px}
+  .grow{flex:1}
+  .scope{display:flex;background:rgba(255,255,255,.1);border-radius:10px;padding:3px;gap:2px}
+  .scope button{
+    border:0;background:transparent;color:#cfe0ee;padding:7px 12px;border-radius:8px;
+    font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  .scope button.active{background:#fff;color:var(--navy)}
+
+  nav{
+    display:flex;gap:4px;background:var(--card);padding:6px 8px;overflow-x:auto;
+    border-bottom:1px solid var(--line);position:sticky;top:60px;z-index:40;
+  }
+  nav button{
+    border:0;background:transparent;color:var(--muted);padding:9px 14px;border-radius:8px;
+    font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  nav button.active{background:var(--bg);color:var(--ink)}
+
+  main{padding:16px;max-width:980px;margin:0 auto}
+  .view{display:none}
+  .view.active{display:block}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:16px}
+  .card h2{margin:0 0 12px;font-size:16px}
+  .card h3{margin:0 0 8px;font-size:14px;color:var(--muted)}
+
+  .grid{display:grid;gap:12px}
+  .grid-3{grid-template-columns:repeat(3,1fr)}
+  .grid-2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:680px){.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+
+  .stat{border-radius:14px;padding:16px;color:#fff;position:relative;overflow:hidden}
+  .stat .label{font-size:12px;opacity:.85;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .stat .value{font-size:28px;font-weight:800;margin-top:6px}
+  .stat .meta{font-size:12px;opacity:.9;margin-top:6px}
+  .stat.total{background:linear-gradient(135deg,var(--navy),#16456b)}
+  .stat.calcio{background:linear-gradient(135deg,var(--calcio),var(--calcio-dark))}
+  .stat.volley{background:linear-gradient(135deg,var(--volley),var(--volley-dark))}
+
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+  .pill.calcio{background:#e4f3e9;color:var(--calcio-dark)}
+  .pill.volley{background:#fbe8dd;color:var(--volley-dark)}
+  .pill.in{background:#e3f6ec;color:var(--in)}
+  .pill.out{background:#fde6e6;color:var(--out)}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
+  th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .amt-in{color:var(--in);font-weight:700}
+  .amt-out{color:var(--out);font-weight:700}
+  tr.clickable{cursor:pointer}
+  tr.clickable:hover{background:var(--bg)}
+
+  .btn{
+    border:0;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;
+    background:var(--navy);color:#fff;
+  }
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+  .btn.danger{background:var(--out)}
+  .btn.sm{padding:6px 10px;font-size:13px}
+  .btn.green{background:var(--calcio)}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+
+  label.field{display:block;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--muted)}
+  input,select,textarea{
+    width:100%;margin-top:5px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;
+    font-size:15px;font-family:inherit;background:#fff;color:var(--ink);
+  }
+  textarea{resize:vertical;min-height:60px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:520px){.row2{grid-template-columns:1fr}}
+
+  .seg{display:flex;gap:0;margin-top:5px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg input{display:none}
+  .seg label{flex:1;text-align:center;padding:10px;font-size:14px;font-weight:600;cursor:pointer;margin:0;color:var(--muted);background:#fff}
+  .seg input:checked + label{color:#fff}
+  .seg input.v-in:checked + label{background:var(--in)}
+  .seg input.v-out:checked + label{background:var(--out)}
+  .seg input.v-team:checked + label{background:var(--navy);color:#fff}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(13,43,69,.45);display:none;align-items:flex-end;justify-content:center;z-index:100}
+  .overlay.open{display:flex}
+  .modal{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:560px;max-height:92vh;overflow:auto;padding:18px}
+  @media(min-width:560px){.overlay{align-items:center}.modal{border-radius:18px}}
+  .modal h2{margin:0 0 14px;font-size:18px}
+  .modal-actions{display:flex;gap:10px;margin-top:8px}
+  .modal-actions .btn{flex:1}
+
+  .empty{text-align:center;color:var(--muted);padding:26px 10px;font-size:14px}
+  canvas{max-width:100%}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:12px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  .player-row .bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:5px}
+  .player-row .bar > div{height:100%;background:var(--in)}
+  .quota-mini{font-size:12px;color:var(--muted)}
+
+  .ev{border-left:4px solid var(--line);padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;display:flex;gap:12px;align-items:center}
+  .ev .date{text-align:center;min-width:48px}
+  .ev .date .d{font-size:20px;font-weight:800;line-height:1}
+  .ev .date .m{font-size:11px;text-transform:uppercase;color:var(--muted)}
+  .ev .body{flex:1}
+  .ev .body .t{font-weight:700}
+  .ev .body .meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .ev.calcio{border-left-color:var(--calcio)}
+  .ev.volley{border-left-color:var(--volley)}
+
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:18px}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px}
+
+  @media print{
+    header,nav,.toolbar,.btn,footer{display:none!important}
+    .view{display:block!important}
+    body{background:#fff}
+    .card{box-shadow:none;break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>⚽🏐 Gestione Istria</h1>
+    <div class="sub">F.C. Istria &amp; Istria Volley — cassa unica</div>
+  </div>
+  <div class="grow"></div>
+  <div class="scope" id="scope">
+    <button data-scope="all" class="active">Tutte</button>
+    <button data-scope="calcio">⚽ Calcio</button>
+    <button data-scope="volley">🏐 Volley</button>
+  </div>
+</header>
+
+<nav id="nav">
+  <button data-view="dashboard" class="active">Riepilogo</button>
+  <button data-view="movimenti">Movimenti</button>
+  <button data-view="giocatori">Giocatori &amp; Quote</button>
+  <button data-view="calendario">Calendario</button>
+  <button data-view="impostazioni">Backup</button>
+</nav>
+
+<main>
+  <!-- DASHBOARD -->
+  <section class="view active" id="view-dashboard">
+    <div class="grid grid-3" id="stats"></div>
+
+    <div class="card">
+      <h2>Andamento mensile (ultimi 6 mesi)</h2>
+      <canvas id="chartMonthly" height="200"></canvas>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--in)"></i>Entrate</span>
+        <span><i class="dot" style="background:var(--out)"></i>Uscite</span>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>Uscite per categoria</h2>
+        <canvas id="chartOut" height="180"></canvas>
+        <div class="legend" id="legendOut"></div>
+      </div>
+      <div class="card">
+        <h2>Entrate per categoria</h2>
+        <canvas id="chartIn" height="180"></canvas>
+        <div class="legend" id="legendIn"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Ultimi movimenti</h2>
+      <div id="recentMoves"></div>
+    </div>
+  </section>
+
+  <!-- MOVIMENTI -->
+  <section class="view" id="view-movimenti">
+    <div class="toolbar">
+      <button class="btn" onclick="openMove()">+ Nuovo movimento</button>
+      <div class="grow"></div>
+      <select id="filterType" style="width:auto" onchange="renderMoves()">
+        <option value="all">Tutti i tipi</option>
+        <option value="entrata">Solo entrate</option>
+        <option value="uscita">Solo uscite</option>
+      </select>
+    </div>
+    <div class="card" style="padding:6px 8px">
+      <div id="movesTable"></div>
+    </div>
+  </section>
+
+  <!-- GIOCATORI -->
+  <section class="view" id="view-giocatori">
+    <div class="toolbar">
+      <button class="btn" onclick="openPlayer()">+ Nuovo giocatore</button>
+      <div class="grow"></div>
+      <span class="hint" id="quotaSummary"></span>
+    </div>
+    <div id="playersList"></div>
+  </section>
+
+  <!-- CALENDARIO -->
+  <section class="view" id="view-calendario">
+    <div class="toolbar">
+      <button class="btn" onclick="openEvent()">+ Nuovo evento</button>
+      <button class="btn ghost" onclick="openFields()">⚙️ Gestione campi</button>
+      <div class="grow"></div>
+      <select id="filterEvent" style="width:auto" onchange="renderEvents()">
+        <option value="all">Tutti</option>
+        <option value="allenamento">Allenamenti</option>
+        <option value="partita">Partite</option>
+      </select>
+    </div>
+    <div id="eventsList"></div>
+  </section>
+
+  <!-- IMPOSTAZIONI / BACKUP -->
+  <section class="view" id="view-impostazioni">
+    <div class="card">
+      <h2>Backup &amp; Esportazione</h2>
+      <p class="hint">I dati sono salvati solo su questo dispositivo (nel browser). Esporta un backup regolarmente per non perderli.</p>
+      <div class="toolbar">
+        <button class="btn green" onclick="exportJSON()">⬇️ Esporta backup (JSON)</button>
+        <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importa backup</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importJSON(event)">
+      </div>
+      <div class="toolbar">
+        <button class="btn ghost" onclick="exportCSV()">📄 Esporta movimenti (CSV)</button>
+        <button class="btn ghost" onclick="window.print()">🖨️ Stampa riepilogo / PDF</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Zona pericolosa</h2>
+      <p class="hint">Carica dati di esempio per provare l'app, oppure cancella tutto.</p>
+      <div class="toolbar">
+        <button class="btn ghost" onclick="loadDemo()">Carica dati di esempio</button>
+        <button class="btn danger" onclick="wipeAll()">Cancella tutti i dati</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Gestione Istria · dati salvati localmente nel browser</footer>
+
+<!-- MODALS -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+/* ============ STORAGE ============ */
+const KEY = "gestione_istria_v1";
+const TEAMS = {
+  calcio:{name:"F.C. Istria", emoji:"⚽", cls:"calcio"},
+  volley:{name:"Istria Volley", emoji:"🏐", cls:"volley"}
+};
+const CATS = {
+  entrata:["Quote giocatori","Sponsor","Incasso partite","Eventi/Tornei","Contributi","Altro"],
+  uscita:["Arbitri","Affitto campo","Attrezzatura","Divise","Iscrizioni","Trasferte","Materiale sanitario","Cancelleria","Altro"]
+};
+let db = load();
+
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if(d && d.moves) return d;
+  }catch(e){}
+  return {moves:[], players:[], events:[], fields:["Campo Comunale","Palestra","Campo allenamento"]};
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+/* ============ STATE ============ */
+let scope = "all"; // all | calcio | volley
+let editingMove=null, editingPlayer=null, editingEvent=null;
+
+/* ============ HELPERS ============ */
+const eur = n => (n<0?"-":"")+"€ "+Math.abs(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = s => { const d=new Date(s+"T00:00"); return d.toLocaleDateString("it-IT",{day:"2-digit",month:"short",year:"numeric"}); };
+const MONTHS=["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+function inScope(team){ return scope==="all" || team===scope; }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ============ NAV ============ */
+document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-"+b.dataset.view).classList.add("active");
+  renderAll();
+});
+document.querySelectorAll("#scope button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#scope button").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active"); scope=b.dataset.scope; renderAll();
+});
+
+/* ============ MODAL ============ */
+const overlay=document.getElementById("overlay");
+function showModal(html){ document.getElementById("modalContent").innerHTML=html; overlay.classList.add("open"); }
+function closeModal(){ overlay.classList.remove("open"); editingMove=editingPlayer=editingEvent=null; }
+overlay.onclick=e=>{ if(e.target===overlay) closeModal(); };
+
+/* ============ TOTALS ============ */
+function totals(team){
+  let inc=0,out=0;
+  db.moves.forEach(m=>{
+    if(team && m.team!==team) return;
+    if(m.type==="entrata") inc+=m.amount; else out+=m.amount;
+  });
+  return {inc,out,bal:inc-out};
+}
+
+/* ============ DASHBOARD ============ */
+function renderDashboard(){
+  const tAll=totals(null), tC=totals("calcio"), tV=totals("volley");
+  document.getElementById("stats").innerHTML=`
+    <div class="stat total">
+      <div class="label">Saldo cassa unica</div>
+      <div class="value">${eur(tAll.bal)}</div>
+      <div class="meta">Entrate ${eur(tAll.inc)} · Uscite ${eur(tAll.out)}</div>
+    </div>
+    <div class="stat calcio">
+      <div class="label">⚽ F.C. Istria</div>
+      <div class="value">${eur(tC.bal)}</div>
+      <div class="meta">Entrate ${eur(tC.inc)} · Uscite ${eur(tC.out)}</div>
+    </div>
+    <div class="stat volley">
+      <div class="label">🏐 Istria Volley</div>
+      <div class="value">${eur(tV.bal)}</div>
+      <div class="meta">Entrate ${eur(tV.inc)} · Uscite ${eur(tV.out)}</div>
+    </div>`;
+
+  drawMonthly();
+  drawCategoryChart("chartOut","legendOut","uscita",["#d23b3b","#e8743b","#e0a82e","#b8503f","#8f3a4f","#6b4b8a","#c2453d"]);
+  drawCategoryChart("chartIn","legendIn","entrata",["#1b9e54","#2aa9a0","#3b82c2","#5a9e1b","#1f7a4d","#0f5526","#37a86b"]);
+
+  const recent=db.moves.filter(m=>inScope(m.team)).slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+  document.getElementById("recentMoves").innerHTML = recent.length? movesTableHTML(recent,false) :
+    `<div class="empty">Nessun movimento. Aggiungine uno dalla scheda <b>Movimenti</b>.</div>`;
+}
+
+function drawMonthly(){
+  const cv=document.getElementById("chartMonthly"); if(!cv) return;
+  const ctx=cv.getContext("2d"); const W=cv.width=cv.clientWidth, H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const now=new Date(); const months=[];
+  for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({y:d.getFullYear(),m:d.getMonth(),inc:0,out:0}); }
+  db.moves.forEach(mv=>{
+    if(!inScope(mv.team)) return;
+    const d=new Date(mv.date+"T00:00");
+    const slot=months.find(x=>x.y===d.getFullYear()&&x.m===d.getMonth());
+    if(slot){ if(mv.type==="entrata") slot.inc+=mv.amount; else slot.out+=mv.amount; }
+  });
+  const max=Math.max(1,...months.map(x=>Math.max(x.inc,x.out)));
+  const padB=24,padT=10,padL=8,padR=8;
+  const cw=(W-padL-padR)/months.length;
+  months.forEach((mo,i)=>{
+    const bx=padL+i*cw; const bw=cw*0.34;
+    const hIn=(H-padB-padT)*(mo.inc/max), hOut=(H-padB-padT)*(mo.out/max);
+    ctx.fillStyle="#1b9e54"; ctx.fillRect(bx+cw*0.16, H-padB-hIn, bw, hIn);
+    ctx.fillStyle="#d23b3b"; ctx.fillRect(bx+cw*0.5, H-padB-hOut, bw, hOut);
+    ctx.fillStyle="#6b7785"; ctx.font="11px sans-serif"; ctx.textAlign="center";
+    ctx.fillText(MONTHS[mo.m], bx+cw/2, H-8);
+  });
+}
+
+function drawCategoryChart(canvasId, legendId, type, palette){
+  const cv=document.getElementById(canvasId); if(!cv) return;
+  const ctx=cv.getContext("2d"); const W=cv.width=cv.clientWidth, H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const map={};
+  db.moves.forEach(m=>{ if(m.type===type && inScope(m.team)) map[m.category]=(map[m.category]||0)+m.amount; });
+  const entries=Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const legend=document.getElementById(legendId);
+  if(!entries.length){ ctx.fillStyle="#9aa6b2"; ctx.font="13px sans-serif"; ctx.textAlign="center"; ctx.fillText("Nessun dato",W/2,H/2); legend.innerHTML=""; return; }
+  const total=entries.reduce((s,e)=>s+e[1],0);
+  const cx=W/2, cy=H/2, r=Math.min(W,H)/2-6, inner=r*0.58;
+  let a=-Math.PI/2;
+  entries.forEach((e,i)=>{
+    const slice=e[1]/total*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+slice); ctx.closePath();
+    ctx.fillStyle=palette[i%palette.length]; ctx.fill(); a+=slice;
+  });
+  ctx.beginPath(); ctx.arc(cx,cy,inner,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill();
+  ctx.fillStyle="#1d2733"; ctx.font="bold 14px sans-serif"; ctx.textAlign="center";
+  ctx.fillText(eur(total).replace("€ ","€"),cx,cy+5);
+  legend.innerHTML=entries.map((e,i)=>`<span><i class="dot" style="background:${palette[i%palette.length]}"></i>${esc(e[0])} · ${eur(e[1])}</span>`).join("");
+}
+
+/* ============ MOVIMENTI ============ */
+function movesTableHTML(list, clickable){
+  return `<table><thead><tr><th>Data</th><th>Squadra</th><th>Categoria</th><th class="num">Importo</th></tr></thead><tbody>${
+    list.map(m=>`<tr class="${clickable?'clickable':''}" ${clickable?`onclick="openMove('${m.id}')"`:''}>
+      <td>${fmtDate(m.date)}</td>
+      <td><span class="pill ${TEAMS[m.team].cls}">${TEAMS[m.team].emoji} ${TEAMS[m.team].name}</span></td>
+      <td>${esc(m.category)}${m.note?`<div class="quota-mini">${esc(m.note)}</div>`:""}</td>
+      <td class="num ${m.type==="entrata"?"amt-in":"amt-out"}">${m.type==="entrata"?"+":"−"} ${eur(m.amount)}</td>
+    </tr>`).join("")
+  }</tbody></table>`;
+}
+function renderMoves(){
+  const ft=document.getElementById("filterType").value;
+  let list=db.moves.filter(m=>inScope(m.team) && (ft==="all"||m.type===ft));
+  list.sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById("movesTable").innerHTML = list.length? movesTableHTML(list,true) :
+    `<div class="empty">Nessun movimento registrato.</div>`;
+}
+function openMove(id){
+  editingMove = id? db.moves.find(m=>m.id===id) : null;
+  const m=editingMove||{type:"entrata",team:scope==="volley"?"volley":"calcio",date:todayISO(),amount:"",category:"",note:""};
+  const opts=t=>CATS[t].map(c=>`<option ${m.category===c?"selected":""}>${c}</option>`).join("");
+  showModal(`
+    <h2>${id?"Modifica":"Nuovo"} movimento</h2>
+    <div class="seg">
+      <input type="radio" name="mtype" id="mt-in" class="v-in" value="entrata" ${m.type==="entrata"?"checked":""} onchange="swapCats()">
+      <label for="mt-in">＋ Entrata</label>
+      <input type="radio" name="mtype" id="mt-out" class="v-out" value="uscita" ${m.type==="uscita"?"checked":""} onchange="swapCats()">
+      <label for="mt-out">－ Uscita</label>
+    </div>
+    <div style="height:12px"></div>
+    <label class="field">Squadra
+      <select id="mTeam">
+        <option value="calcio" ${m.team==="calcio"?"selected":""}>⚽ F.C. Istria</option>
+        <option value="volley" ${m.team==="volley"?"selected":""}>🏐 Istria Volley</option>
+      </select>
+    </label>
+    <div class="row2">
+      <label class="field">Importo (€)
+        <input type="number" id="mAmount" step="0.01" min="0" inputmode="decimal" value="${m.amount}">
+      </label>
+      <label class="field">Data
+        <input type="date" id="mDate" value="${m.date}">
+      </label>
+    </div>
+    <label class="field">Categoria
+      <select id="mCat">${opts(m.type)}</select>
+    </label>
+    <label class="field">Note (facoltativo)
+      <input type="text" id="mNote" value="${esc(m.note)}" placeholder="es. quota Mario Rossi">
+    </label>
+    <div class="modal-actions">
+      ${id?`<button class="btn danger" onclick="delMove('${id}')">Elimina</button>`:""}
+      <button class="btn ghost" onclick="closeModal()">Annulla</button>
+      <button class="btn" onclick="saveMove()">Salva</button>
+    </div>`);
+}
+function swapCats(){
+  const t=document.querySelector('input[name="mtype"]:checked').value;
+  document.getElementById("mCat").innerHTML=CATS[t].map(c=>`<option>${c}</option>`).join("");
+}
+function saveMove(){
+  const amount=parseFloat(document.getElementById("mAmount").value);
+  if(!amount||amount<=0){ alert("Inserisci un importo valido."); return; }
+  const o={
+    type:document.querySelector('input[name="mtype"]:checked').value,
+    team:document.getElementById("mTeam").value,
+    amount:amount,
+    date:document.getElementById("mDate").value||todayISO(),
+    category:document.getElementById("mCat").value,
+    note:document.getElementById("mNote").value.trim()
+  };
+  if(editingMove) Object.assign(editingMove,o);
+  else db.moves.push({id:uid(),...o});
+  save(); closeModal(); renderAll();
+}
+function delMove(id){ if(confirm("Eliminare questo movimento?")){ db.moves=db.moves.filter(m=>m.id!==id); save(); closeModal(); renderAll(); } }
+
+/* ============ GIOCATORI & QUOTE ============ */
+function renderPlayers(){
+  const list=db.players.filter(p=>inScope(p.team));
+  let totDue=0,totPaid=0;
+  list.forEach(p=>{ totDue+=(p.quota||0); totPaid+=(p.paid||0); });
+  document.getElementById("quotaSummary").innerHTML=list.length?
+    `Quote: incassate <b>${eur(totPaid)}</b> / previste <b>${eur(totDue)}</b> · da incassare <b style="color:var(--out)">${eur(totDue-totPaid)}</b>`:"";
+  const el=document.getElementById("playersList");
+  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore. Aggiungine uno con <b>+ Nuovo giocatore</b>.</div></div>`; return; }
+  list.sort((a,b)=>a.name.localeCompare(b.name));
+  el.innerHTML=`<div class="card" style="padding:8px">${list.map(p=>{
+    const pct=p.quota>0?Math.min(100,Math.round(p.paid/p.quota*100)):0;
+    const remaining=(p.quota||0)-(p.paid||0);
+    return `<div class="player-row" style="padding:10px 8px;border-bottom:1px solid var(--line)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:1">
+          <div style="font-weight:700">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span></div>
+          <div class="quota-mini">Pagato ${eur(p.paid||0)} di ${eur(p.quota||0)} ${remaining>0?`· <span style="color:var(--out)">resta ${eur(remaining)}</span>`:`· <span style="color:var(--in)">✓ saldato</span>`}</div>
+        </div>
+        <button class="btn ghost sm" onclick="addPayment('${p.id}')">+ Pagamento</button>
+        <button class="btn ghost sm" onclick="openPlayer('${p.id}')">✏️</button>
+      </div>
+      <div class="bar"><div style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("")}</div>`;
+}
+function openPlayer(id){
+  editingPlayer=id?db.players.find(p=>p.id===id):null;
+  const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",quota:"",paid:0};
+  showModal(`
+    <h2>${id?"Modifica":"Nuovo"} giocatore</h2>
+    <label class="field">Nome e cognome
+      <input type="text" id="pName" value="${esc(p.name)}" placeholder="es. Mario Rossi">
+    </label>
+    <label class="field">Squadra
+      <select id="pTeam">
+        <option value="calcio" ${p.team==="calcio"?"selected":""}>⚽ F.C. Istria</option>
+        <option value="volley" ${p.team==="volley"?"selected":""}>🏐 Istria Volley</option>
+      </select>
+    </label>
+    <label class="field">Quota stagionale prevista (€)
+      <input type="number" id="pQuota" step="0.01" min="0" value="${p.quota}">
+    </label>
+    <p class="hint">I pagamenti si aggiungono dalla lista con "+ Pagamento" e creano automaticamente un'entrata in cassa.</p>
+    <div class="modal-actions">
+      ${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button>`:""}
+      <button class="btn ghost" onclick="closeModal()">Annulla</button>
+      <button class="btn" onclick="savePlayer()">Salva</button>
+    </div>`);
+}
+function savePlayer(){
+  const name=document.getElementById("pName").value.trim();
+  if(!name){ alert("Inserisci il nome."); return; }
+  const o={name, team:document.getElementById("pTeam").value, quota:parseFloat(document.getElementById("pQuota").value)||0};
+  if(editingPlayer) Object.assign(editingPlayer,o);
+  else db.players.push({id:uid(),paid:0,...o});
+  save(); closeModal(); renderAll();
+}
+function delPlayer(id){ if(confirm("Eliminare il giocatore? (i movimenti restano)")){ db.players=db.players.filter(p=>p.id!==id); save(); closeModal(); renderAll(); } }
+function addPayment(id){
+  const p=db.players.find(x=>x.id===id);
+  const def=Math.max(0,(p.quota||0)-(p.paid||0));
+  showModal(`
+    <h2>Pagamento quota — ${esc(p.name)}</h2>
+    <label class="field">Importo (€)
+      <input type="number" id="payAmt" step="0.01" min="0" value="${def||""}">
+    </label>
+    <label class="field">Data
+      <input type="date" id="payDate" value="${todayISO()}">
+    </label>
+    <p class="hint">Verrà aggiunta un'entrata "Quote giocatori" nella cassa ${TEAMS[p.team].name}.</p>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Annulla</button>
+      <button class="btn green" onclick="savePayment('${id}')">Registra</button>
+    </div>`);
+}
+function savePayment(id){
+  const p=db.players.find(x=>x.id===id);
+  const amt=parseFloat(document.getElementById("payAmt").value);
+  if(!amt||amt<=0){ alert("Importo non valido."); return; }
+  const date=document.getElementById("payDate").value||todayISO();
+  p.paid=(p.paid||0)+amt;
+  db.moves.push({id:uid(),type:"entrata",team:p.team,amount:amt,date,category:"Quote giocatori",note:"Quota "+p.name});
+  save(); closeModal(); renderAll();
+}
+
+/* ============ CALENDARIO & CAMPI ============ */
+function renderEvents(){
+  const fe=document.getElementById("filterEvent").value;
+  let list=db.events.filter(e=>inScope(e.team) && (fe==="all"||e.kind===fe));
+  list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const el=document.getElementById("eventsList");
+  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun evento in calendario.</div></div>`; return; }
+  const today=todayISO();
+  const upcoming=list.filter(e=>e.date>=today), past=list.filter(e=>e.date<today).reverse();
+  const card=(arr,title)=> arr.length?`<div class="card"><h2>${title}</h2>${arr.map(evHTML).join("")}</div>`:"";
+  el.innerHTML=card(upcoming,"Prossimi eventi")+card(past,"Passati");
+}
+function evHTML(e){
+  const d=new Date(e.date+"T00:00");
+  const icon=e.kind==="partita"?"🏆":"🏃";
+  return `<div class="ev ${TEAMS[e.team].cls}" onclick="openEvent('${e.id}')" style="cursor:pointer">
+    <div class="date"><div class="d">${d.getDate()}</div><div class="m">${MONTHS[d.getMonth()]}</div></div>
+    <div class="body">
+      <div class="t">${icon} ${e.kind==="partita"?("vs "+esc(e.opponent||"—")):"Allenamento"} <span class="pill ${TEAMS[e.team].cls}">${TEAMS[e.team].emoji}</span></div>
+      <div class="meta">${e.time||"--:--"} · 📍 ${esc(e.field||"—")}${e.note?" · "+esc(e.note):""}</div>
+    </div>
+  </div>`;
+}
+function openEvent(id){
+  editingEvent=id?db.events.find(e=>e.id===id):null;
+  const e=editingEvent||{kind:"allenamento",team:scope==="volley"?"volley":"calcio",date:todayISO(),time:"19:00",field:db.fields[0]||"",opponent:"",note:""};
+  const fieldOpts=db.fields.map(f=>`<option ${e.field===f?"selected":""}>${esc(f)}</option>`).join("");
+  showModal(`
+    <h2>${id?"Modifica":"Nuovo"} evento</h2>
+    <div class="seg">
+      <input type="radio" name="ekind" id="ek-all" class="v-team" value="allenamento" ${e.kind==="allenamento"?"checked":""} onchange="toggleOpp()">
+      <label for="ek-all">🏃 Allenamento</label>
+      <input type="radio" name="ekind" id="ek-par" class="v-team" value="partita" ${e.kind==="partita"?"checked":""} onchange="toggleOpp()">
+      <label for="ek-par">🏆 Partita</label>
+    </div>
+    <div style="height:12px"></div>
+    <label class="field">Squadra
+      <select id="eTeam">
+        <option value="calcio" ${e.team==="calcio"?"selected":""}>⚽ F.C. Istria</option>
+        <option value="volley" ${e.team==="volley"?"selected":""}>🏐 Istria Volley</option>
+      </select>
+    </label>
+    <div class="row2">
+      <label class="field">Data <input type="date" id="eDate" value="${e.date}"></label>
+      <label class="field">Ora <input type="time" id="eTime" value="${e.time}"></label>
+    </div>
+    <label class="field">Campo / Luogo
+      <select id="eField">${fieldOpts}</select>
+    </label>
+    <label class="field" id="oppWrap" style="${e.kind==="partita"?"":"display:none"}">Avversario
+      <input type="text" id="eOpp" value="${esc(e.opponent)}" placeholder="es. ASD Rovigno">
+    </label>
+    <label class="field">Note <input type="text" id="eNote" value="${esc(e.note)}"></label>
+    <div class="modal-actions">
+      ${id?`<button class="btn danger" onclick="delEvent('${id}')">Elimina</button>`:""}
+      <button class="btn ghost" onclick="closeModal()">Annulla</button>
+      <button class="btn" onclick="saveEvent()">Salva</button>
+    </div>`);
+}
+function toggleOpp(){
+  const k=document.querySelector('input[name="ekind"]:checked').value;
+  document.getElementById("oppWrap").style.display=k==="partita"?"":"none";
+}
+function saveEvent(){
+  const o={
+    kind:document.querySelector('input[name="ekind"]:checked').value,
+    team:document.getElementById("eTeam").value,
+    date:document.getElementById("eDate").value||todayISO(),
+    time:document.getElementById("eTime").value,
+    field:document.getElementById("eField").value,
+    opponent:document.getElementById("eOpp").value.trim(),
+    note:document.getElementById("eNote").value.trim()
+  };
+  if(editingEvent) Object.assign(editingEvent,o);
+  else db.events.push({id:uid(),...o});
+  save(); closeModal(); renderAll();
+}
+function delEvent(id){ if(confirm("Eliminare l'evento?")){ db.events=db.events.filter(e=>e.id!==id); save(); closeModal(); renderAll(); } }
+function openFields(){
+  showModal(`
+    <h2>Gestione campi / luoghi</h2>
+    <div id="fieldList">${db.fields.map((f,i)=>`<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+      <input type="text" value="${esc(f)}" data-i="${i}" class="fEdit">
+      <button class="btn danger sm" onclick="rmField(${i})">✕</button>
+    </div>`).join("")}</div>
+    <button class="btn ghost sm" onclick="addField()">+ Aggiungi campo</button>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Chiudi</button>
+      <button class="btn" onclick="saveFields()">Salva</button>
+    </div>`);
+}
+function addField(){ db.fields.push("Nuovo campo"); openFields(); }
+function rmField(i){ db.fields.splice(i,1); openFields(); }
+function saveFields(){
+  db.fields=[...document.querySelectorAll(".fEdit")].map(x=>x.value.trim()).filter(Boolean);
+  if(!db.fields.length) db.fields=["Campo Comunale"];
+  save(); closeModal(); renderAll();
+}
+
+/* ============ BACKUP ============ */
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+  dl(blob,"gestione-istria-backup-"+todayISO()+".json");
+}
+function importJSON(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+    const d=JSON.parse(r.result);
+    if(!d.moves) throw 0;
+    db={moves:d.moves||[],players:d.players||[],events:d.events||[],fields:d.fields||["Campo Comunale"]};
+    save(); renderAll(); alert("Backup importato con successo.");
+  }catch(e){ alert("File non valido."); } };
+  r.readAsText(f); ev.target.value="";
+}
+function exportCSV(){
+  const rows=[["Data","Squadra","Tipo","Categoria","Importo","Note"]];
+  db.moves.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(m=>
+    rows.push([m.date,TEAMS[m.team].name,m.type,m.category,m.amount.toFixed(2).replace(".",","),m.note||""]));
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
+  dl(new Blob(["﻿"+csv],{type:"text/csv"}),"movimenti-istria-"+todayISO()+".csv");
+}
+function dl(blob,name){
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function wipeAll(){
+  if(confirm("Cancellare TUTTI i dati? Operazione irreversibile.\nConsiglio: esporta prima un backup.")){
+    db={moves:[],players:[],events:[],fields:["Campo Comunale","Palestra","Campo allenamento"]};
+    save(); renderAll();
+  }
+}
+function loadDemo(){
+  if(db.moves.length && !confirm("Sovrascrivere i dati attuali con quelli di esempio?")) return;
+  const t=todayISO(); const y=new Date();
+  const mago=(off)=>{ const d=new Date(y.getFullYear(),y.getMonth()-off,5+off); return d.toISOString().slice(0,10); };
+  db={
+    fields:["Campo Comunale","Palestra Centrale","Campo allenamento Nord"],
+    players:[
+      {id:uid(),name:"Mario Rossi",team:"calcio",quota:150,paid:150},
+      {id:uid(),name:"Luca Bianchi",team:"calcio",quota:150,paid:75},
+      {id:uid(),name:"Giulia Verdi",team:"volley",quota:120,paid:120},
+      {id:uid(),name:"Sara Neri",team:"volley",quota:120,paid:0}
+    ],
+    events:[
+      {id:uid(),kind:"allenamento",team:"calcio",date:t,time:"19:00",field:"Campo allenamento Nord",opponent:"",note:""},
+      {id:uid(),kind:"partita",team:"calcio",date:mago(-1),time:"15:30",field:"Campo Comunale",opponent:"ASD Rovigno",note:"Campionato"},
+      {id:uid(),kind:"allenamento",team:"volley",date:t,time:"20:30",field:"Palestra Centrale",opponent:"",note:""}
+    ],
+    moves:[
+      {id:uid(),type:"entrata",team:"calcio",amount:150,date:mago(2),category:"Quote giocatori",note:"Quota Mario Rossi"},
+      {id:uid(),type:"entrata",team:"calcio",amount:500,date:mago(2),category:"Sponsor",note:"Bar Centrale"},
+      {id:uid(),type:"uscita",team:"calcio",amount:120,date:mago(1),category:"Arbitri",note:""},
+      {id:uid(),type:"uscita",team:"calcio",amount:300,date:mago(1),category:"Affitto campo",note:""},
+      {id:uid(),type:"entrata",team:"volley",amount:120,date:mago(1),category:"Quote giocatori",note:"Quota Giulia Verdi"},
+      {id:uid(),type:"uscita",team:"volley",amount:180,date:mago(0),category:"Divise",note:""},
+      {id:uid(),type:"entrata",team:"volley",amount:250,date:mago(0),category:"Sponsor",note:""}
+    ]
+  };
+  save(); renderAll();
+}
+
+/* ============ RENDER ALL ============ */
+function renderAll(){
+  renderDashboard(); renderMoves(); renderPlayers(); renderEvents();
+}
+window.addEventListener("resize",()=>{ if(document.getElementById("view-dashboard").classList.contains("active")) renderDashboard(); });
+renderAll();
+</script>
+</body>
+</html>

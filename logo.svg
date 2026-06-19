@@ -1,37 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <pattern id="stripes" width="14" height="14" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-      <rect width="14" height="14" fill="#f2c200"/>
-      <rect width="7" height="14" fill="#ffffff"/>
+    <pattern id="stripes" width="12" height="12" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="12" height="12" fill="#f2c200"/>
+      <rect width="6" height="12" fill="#ffffff"/>
     </pattern>
-    <clipPath id="innerClip"><circle cx="100" cy="112" r="33"/></clipPath>
+    <clipPath id="innerClip"><circle cx="100" cy="114" r="34"/></clipPath>
   </defs>
 
-  <!-- disco giallo + anello nero -->
+  <!-- disco giallo -->
   <circle cx="100" cy="100" r="99" fill="#f2c200"/>
-  <circle cx="100" cy="100" r="90" fill="none" stroke="#111111" stroke-width="9"/>
+  <!-- anello nero spesso -->
+  <circle cx="100" cy="100" r="88" fill="none" stroke="#111111" stroke-width="13"/>
 
-  <!-- scritte -->
-  <text x="100" y="58" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="40" letter-spacing="10" fill="#111111">FC</text>
-  <text x="100" y="178" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="34" letter-spacing="4" fill="#111111">ISTRIA</text>
+  <!-- lettere F C -->
+  <text x="68"  y="66" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="46" fill="#111111">F</text>
+  <text x="132" y="66" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="46" fill="#111111">C</text>
+  <!-- ISTRIA -->
+  <text x="100" y="181" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-style="italic" font-size="32" letter-spacing="2" fill="#111111">ISTRIA</text>
 
   <!-- cerchio centrale a strisce -->
-  <circle cx="100" cy="112" r="33" fill="url(#stripes)"/>
+  <circle cx="100" cy="114" r="34" fill="url(#stripes)"/>
   <g clip-path="url(#innerClip)">
-    <!-- gazza stilizzata in volo -->
-    <path fill="#111111" d="M86 112
-      c-6 -10 -20 -14 -30 -10 c8 -2 16 0 22 6 c-10 -4 -22 -2 -30 6 c10 -6 20 -6 28 -2
-      c-6 2 -12 8 -14 16 c6 -8 14 -12 22 -12
-      c4 0 8 1 11 3
-      l6 4
-      c4 -10 12 -18 24 -22 c14 -5 28 -16 34 -30 c-2 14 -10 26 -22 33
-      c10 -2 19 -8 25 -17 c-3 13 -12 23 -24 28
-      c-8 3 -15 9 -18 17
-      c-2 5 -7 8 -12 8 c-9 0 -17 -6 -19 -15 z"/>
-    <!-- testa e becco -->
-    <circle cx="84" cy="108" r="7" fill="#111111"/>
-    <path fill="#f2c200" d="M82 106 a2 2 0 1 0 0.1 0 z"/>
-    <path fill="#111111" d="M77 109 l-9 1 l9 3 z"/>
+    <!-- gazza in volo (testa a sinistra, ali aperte verso l'alto, coda lunga) -->
+    <path fill="#111111" d="M88 116
+      C84 110 84 104 88 100
+      C92 105 95 108 99 109
+      C104 95 116 86 132 82
+      C124 90 118 98 116 106
+      C124 99 132 95 141 95
+      C133 101 126 108 121 116
+      C127 113 134 112 140 114
+      C131 118 123 122 117 128
+      L150 150
+      L118 134
+      C114 140 107 143 100 142
+      C112 138 116 130 113 122
+      C108 126 100 127 92 124
+      C97 123 100 120 100 117
+      C96 119 91 119 88 116 Z"/>
+    <!-- testa -->
+    <circle cx="86" cy="108" r="7.5" fill="#111111"/>
+    <!-- occhio -->
+    <circle cx="84" cy="106" r="1.8" fill="#f2c200"/>
+    <!-- becco -->
+    <path fill="#111111" d="M80 108 L70 106 L70 110 L80 111 Z"/>
   </g>
-  <circle cx="100" cy="112" r="33" fill="none" stroke="#111111" stroke-width="6"/>
+  <!-- bordo cerchio centrale -->
+  <circle cx="100" cy="114" r="34" fill="none" stroke="#111111" stroke-width="5"/>
 </svg>

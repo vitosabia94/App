@@ -24,11 +24,26 @@ CREATE TABLE campi (
 );
 
 -- ---------- GIOCATORI ----------
+-- genere: 'M' (Uomo) | 'F' (Donna)
+-- Quote standard: Uomo 30/mese + 20 iscr. · Donna 20/mese + 50 iscr.
 CREATE TABLE giocatori (
-    id             VARCHAR(20)  PRIMARY KEY,
-    nome           VARCHAR(150) NOT NULL,
-    squadra_id     VARCHAR(20)  NOT NULL REFERENCES squadre(id),
-    quota_mensile  DECIMAL(10,2) NOT NULL DEFAULT 0
+    id               VARCHAR(20)  PRIMARY KEY,
+    nome             VARCHAR(150) NOT NULL,
+    squadra_id       VARCHAR(20)  NOT NULL REFERENCES squadre(id),
+    genere           CHAR(1)      NOT NULL DEFAULT 'M' CHECK (genere IN ('M','F')),
+    quota_mensile    DECIMAL(10,2) NOT NULL DEFAULT 0,
+    quota_iscrizione DECIMAL(10,2) NOT NULL DEFAULT 0
+);
+
+-- ---------- ISCRIZIONI (una tantum a inizio stagione) ----------
+CREATE TABLE iscrizioni (
+    id            INTEGER PRIMARY KEY,
+    giocatore_id  VARCHAR(20)  NOT NULL REFERENCES giocatori(id),
+    stagione      INTEGER      NOT NULL,            -- anno di inizio stagione (es. 2025)
+    importo       DECIMAL(10,2) NOT NULL,
+    data          DATE         NOT NULL,
+    movimento_id  VARCHAR(20)  REFERENCES movimenti(id),
+    UNIQUE (giocatore_id, stagione)
 );
 
 -- ---------- MOVIMENTI (entrate / uscite) ----------
@@ -61,6 +76,7 @@ CREATE TABLE pagamenti_quote (
 );
 
 -- ---------- EVENTI (calendario: allenamenti / partite) ----------
+-- Per le partite: gol_fatti / gol_subiti (NULL se non ancora giocata).
 CREATE TABLE eventi (
     id          VARCHAR(20)  PRIMARY KEY,
     squadra_id  VARCHAR(20)  NOT NULL REFERENCES squadre(id),
@@ -69,7 +85,17 @@ CREATE TABLE eventi (
     ora         VARCHAR(5),                        -- 'HH:MM'
     campo       VARCHAR(120),
     avversario  VARCHAR(150),                      -- solo per le partite
+    gol_fatti   INTEGER,                           -- risultato: gol/punti della squadra
+    gol_subiti  INTEGER,                           -- risultato: gol/punti avversario
     note        VARCHAR(255)
+);
+
+-- ---------- MARCATORI (solo calcio) ----------
+CREATE TABLE marcatori (
+    id            INTEGER PRIMARY KEY,
+    evento_id     VARCHAR(20)  NOT NULL REFERENCES eventi(id),
+    giocatore_id  VARCHAR(20)  NOT NULL REFERENCES giocatori(id),
+    gol           INTEGER      NOT NULL DEFAULT 1
 );
 
 -- ---------- INDICI ----------

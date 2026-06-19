@@ -247,10 +247,12 @@
 const KEY="gestione_istria_v2", AUTHKEY="gestione_istria_auth";
 const TEAMS={calcio:{name:"F.C. Istria",emoji:"🐦‍⬛",cls:"calcio"},volley:{name:"Istria Volley",emoji:"🐦‍⬛",cls:"volley"}};
 const CATS={
-  entrata:["Quote giocatori","Sponsor","Incasso partite","Eventi/Tornei","Contributi","Altro"],
+  entrata:["Quote giocatori","Iscrizioni","Sponsor","Incasso partite","Eventi/Tornei","Contributi","Altro"],
   uscita:["Arbitri","Affitto campo","Attrezzatura","Divise","Iscrizioni","Trasferte","Materiale sanitario","Cancelleria","Altro"]
 };
 const CLASSI={standard:"Standard",straordinaria:"Straordinaria",accessoria:"Accessoria"};
+const QUOTA_MENSILE={M:30,F:20};      // Uomini 30€/mese, Donne 20€/mese
+const QUOTA_ISCRIZIONE={M:20,F:50};   // Iscrizione: Uomini 20€, Donne 50€ (una tantum a inizio stagione)
 const MONTHS=["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
 
 /* ============ AUTH ============ */
@@ -331,7 +333,14 @@ function load(){
 function migrate(d){
   d.players=d.players||[]; d.events=d.events||[]; d.fields=d.fields||["Campo Comunale"];
   d.moves.forEach(m=>{ if(!m.classe) m.classe="standard"; });
-  d.players.forEach(p=>{ if(!p.payments) p.payments={}; if(p.quotaMensile==null) p.quotaMensile=p.quota||0; });
+  d.players.forEach(p=>{
+    if(!p.payments) p.payments={};
+    if(!p.gender) p.gender="M";
+    if(p.quotaMensile==null) p.quotaMensile=p.quota!=null?p.quota:QUOTA_MENSILE[p.gender];
+    if(p.quotaIscrizione==null) p.quotaIscrizione=QUOTA_ISCRIZIONE[p.gender];
+    if(!p.iscrizioni) p.iscrizioni={};
+  });
+  d.events.forEach(e=>{ if(e.kind==="partita"&&!e.scorers) e.scorers=[]; });
   return d;
 }
 function save(){ localStorage.setItem(KEY,JSON.stringify(db)); }
@@ -478,6 +487,12 @@ function renderPlayers(){
   if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore. Aggiungine uno con <b>+ Nuovo giocatore</b>.</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }
   let rows="";
   list.forEach(p=>{
+    // colonna iscrizione (una tantum a inizio stagione)
+    const isc=p.iscrizioni[seasonStart];
+    totDue+=p.quotaIscrizione||0;
+    let iCls="unpaid",iTxt="−";
+    if(isc){ totPaid+=isc.amount; iCls="paid"; iTxt="✓"; }
+    const iscCell=`<td><div class="mcell ${iCls}" title="Iscrizione${isc?' · '+eur(isc.amount):' · '+eur(p.quotaIscrizione||0)}" onclick="toggleIscrizione('${p.id}')">${iTxt}</div></td>`;
     let cells="";
     months.forEach(mo=>{
       const pay=p.payments[mo.key];
@@ -487,10 +502,10 @@ function renderPlayers(){
       cells+=`<td><div class="mcell ${cls}" title="${mo.label} ${mo.year}${pay?' · '+eur(pay.amount):''}" onclick="toggleMonth('${p.id}','${mo.key}')">${txt}</div></td>`;
     });
     const paidCount=months.filter(mo=>p.payments[mo.key]).length;
-    rows+=`<tr><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>
-      <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} pagati <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a></div></td>${cells}</tr>`;
+    rows+=`<tr><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?"♀":"♂"}</span>
+      <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} mesi <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a></div></td>${iscCell}${cells}</tr>`;
   });
-  el.innerHTML=`<div class="pgrid"><table><thead><tr><th class="name">Giocatore</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  el.innerHTML=`<div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   document.getElementById("quotaSummary").innerHTML=`Stagione: incassato <b>${eur(totPaid)}</b> / previsto <b>${eur(totDue)}</b> · manca <b style="color:var(--out)">${eur(totDue-totPaid)}</b>`;
 }
 function toggleMonth(pid,key){
@@ -519,21 +534,55 @@ function confirmMonth(pid,key){
   db.moves.push(mv); p.payments[key]={amount:amt,date,moveId:mv.id};
   save(); closeModal(); renderAll();
 }
+function toggleIscrizione(pid){
+  const p=db.players.find(x=>x.id===pid);
+  if(p.iscrizioni[seasonStart]){
+    if(!confirm("Annullare l'iscrizione di questa stagione? Verrà rimossa anche l'entrata in cassa.")) return;
+    const mvId=p.iscrizioni[seasonStart].moveId; db.moves=db.moves.filter(m=>m.id!==mvId); delete p.iscrizioni[seasonStart];
+    save(); renderAll(); return;
+  }
+  const def=p.quotaIscrizione||0;
+  showModal(`<h2>Iscrizione ${esc(p.name)} — Stagione ${seasonStart}/${String(seasonStart+1).slice(2)}</h2>
+    <label class="field">Importo (€)<input type="number" id="isAmt" step="0.01" min="0" value="${def||""}"></label>
+    <label class="field">Data pagamento<input type="date" id="isDate" value="${todayISO()}"></label>
+    <p class="hint">Crea un'entrata "Iscrizioni" (tipologia standard) nella cassa ${TEAMS[p.team].name}.</p>
+    <div class="modal-actions"><button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn green" onclick="confirmIscrizione('${pid}')">Registra</button></div>`);
+}
+function confirmIscrizione(pid){
+  const p=db.players.find(x=>x.id===pid);
+  const amt=parseFloat(document.getElementById("isAmt").value);
+  if(!amt||amt<=0){ alert("Importo non valido."); return; }
+  const date=document.getElementById("isDate").value||todayISO();
+  const mv={id:uid(),type:"entrata",team:p.team,classe:"standard",amount:amt,date,category:"Iscrizioni",note:"Iscrizione "+p.name+" ("+seasonStart+"/"+String(seasonStart+1).slice(2)+")"};
+  db.moves.push(mv); p.iscrizioni[seasonStart]={amount:amt,date,moveId:mv.id};
+  save(); closeModal(); renderAll();
+}
 function openPlayer(id){
   editingPlayer=id?db.players.find(p=>p.id===id):null;
-  const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",quotaMensile:""};
+  const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",gender:"M",quotaMensile:QUOTA_MENSILE.M,quotaIscrizione:QUOTA_ISCRIZIONE.M};
   showModal(`<h2>${id?"Modifica":"Nuovo"} giocatore</h2>
     <label class="field">Nome e cognome<input type="text" id="pName" value="${esc(p.name)}" placeholder="es. Mario Rossi"></label>
-    <label class="field">Squadra<select id="pTeam"><option value="calcio" ${p.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${p.team==="volley"?"selected":""}>🐦‍⬛ Istria Volley</option></select></label>
-    <label class="field">Quota mensile (€)<input type="number" id="pQuota" step="0.01" min="0" value="${p.quotaMensile}"></label>
-    <p class="hint">I pagamenti mensili si segnano dalla griglia toccando le caselle dei mesi.</p>
+    <div class="row2">
+      <label class="field">Squadra<select id="pTeam"><option value="calcio" ${p.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${p.team==="volley"?"selected":""}>🐦‍⬛ Istria Volley</option></select></label>
+      <label class="field">Genere<select id="pGender" onchange="applyGenderDefaults()"><option value="M" ${p.gender==="M"?"selected":""}>Uomo</option><option value="F" ${p.gender==="F"?"selected":""}>Donna</option></select></label>
+    </div>
+    <div class="row2">
+      <label class="field">Quota mensile (€)<input type="number" id="pQuota" step="0.01" min="0" value="${p.quotaMensile}"></label>
+      <label class="field">Iscrizione (€)<input type="number" id="pIscr" step="0.01" min="0" value="${p.quotaIscrizione}"></label>
+    </div>
+    <p class="hint">Il genere imposta le quote standard (Uomo 30€/mese + 20€ iscr. · Donna 20€/mese + 50€ iscr.). Puoi comunque modificarle a mano.</p>
     <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
+}
+function applyGenderDefaults(){
+  const g=document.getElementById("pGender").value;
+  document.getElementById("pQuota").value=QUOTA_MENSILE[g];
+  document.getElementById("pIscr").value=QUOTA_ISCRIZIONE[g];
 }
 function savePlayer(){
   const name=document.getElementById("pName").value.trim();
   if(!name){ alert("Inserisci il nome."); return; }
-  const o={name,team:document.getElementById("pTeam").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0};
-  if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},...o});
+  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0};
+  if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},iscrizioni:{},...o});
   save(); closeModal(); renderAll();
 }
 function delPlayer(id){ if(confirm("Eliminare il giocatore? (i movimenti già registrati restano)")){ db.players=db.players.filter(p=>p.id!==id); save(); closeModal(); renderAll(); } }
@@ -550,28 +599,76 @@ function renderEvents(){
 }
 function evHTML(e){
   const d=new Date(e.date+"T00:00"),icon=e.kind==="partita"?"🏆":"🏃";
+  let result="";
+  if(e.kind==="partita" && e.scoreFor!=null && e.scoreAgainst!=null){
+    const w=e.scoreFor>e.scoreAgainst, l=e.scoreFor<e.scoreAgainst;
+    const col=w?"var(--in)":(l?"var(--out)":"var(--muted)"), tag=w?"V":(l?"P":"X");
+    result=`<span style="font-weight:800;color:${col};margin-left:8px">${e.scoreFor}–${e.scoreAgainst} <span style="font-size:11px;border:1px solid ${col};border-radius:5px;padding:0 4px">${tag}</span></span>`;
+  }
+  let scorers="";
+  if(e.kind==="partita" && e.scorers && e.scorers.length){
+    const names=e.scorers.map(s=>{ const p=db.players.find(x=>x.id===s.playerId); return (p?esc(p.name):"?")+(s.goals>1?" ("+s.goals+")":""); });
+    scorers=`<div class="hint">⚽ ${names.join(", ")}</div>`;
+  }
   return `<div style="border-left:4px solid var(--${TEAMS[e.team].cls});padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;display:flex;gap:12px;align-items:center;cursor:pointer" onclick="openEvent('${e.id}')">
     <div style="text-align:center;min-width:46px"><div style="font-size:20px;font-weight:800">${d.getDate()}</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">${MONTHS[d.getMonth()]}</div></div>
-    <div style="flex:1"><div style="font-weight:700">${icon} ${e.kind==="partita"?("vs "+esc(e.opponent||"—")):"Allenamento"} <span class="pill ${TEAMS[e.team].cls}">${TEAMS[e.team].emoji}</span></div>
-    <div class="hint">${e.time||"--:--"} · 📍 ${esc(e.field||"—")}${e.note?" · "+esc(e.note):""}</div></div></div>`;
+    <div style="flex:1"><div style="font-weight:700">${icon} ${e.kind==="partita"?("vs "+esc(e.opponent||"—")):"Allenamento"} <span class="pill ${TEAMS[e.team].cls}">${TEAMS[e.team].emoji}</span>${result}</div>
+    <div class="hint">${e.time||"--:--"} · 📍 ${esc(e.field||"—")}${e.note?" · "+esc(e.note):""}</div>${scorers}</div></div>`;
 }
 function openEvent(id){
   editingEvent=id?db.events.find(e=>e.id===id):null;
   const e=editingEvent||{kind:"allenamento",team:scope==="volley"?"volley":"calcio",date:todayISO(),time:"19:00",field:db.fields[0]||"",opponent:"",note:""};
   const fo=db.fields.map(f=>`<option ${e.field===f?"selected":""}>${esc(f)}</option>`).join("");
   showModal(`<h2>${id?"Modifica":"Nuovo"} evento</h2>
-    <div class="seg"><input type="radio" name="ekind" id="ek-a" class="v-team" value="allenamento" ${e.kind==="allenamento"?"checked":""} onchange="toggleOpp()"><label for="ek-a">🏃 Allenamento</label>
-    <input type="radio" name="ekind" id="ek-p" class="v-team" value="partita" ${e.kind==="partita"?"checked":""} onchange="toggleOpp()"><label for="ek-p">🏆 Partita</label></div><div style="height:12px"></div>
-    <label class="field">Squadra<select id="eTeam"><option value="calcio" ${e.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${e.team==="volley"?"selected":""}>🐦‍⬛ Istria Volley</option></select></label>
+    <div class="seg"><input type="radio" name="ekind" id="ek-a" class="v-team" value="allenamento" ${e.kind==="allenamento"?"checked":""} onchange="updateEventForm()"><label for="ek-a">🏃 Allenamento</label>
+    <input type="radio" name="ekind" id="ek-p" class="v-team" value="partita" ${e.kind==="partita"?"checked":""} onchange="updateEventForm()"><label for="ek-p">🏆 Partita</label></div><div style="height:12px"></div>
+    <label class="field">Squadra<select id="eTeam" onchange="updateEventForm()"><option value="calcio" ${e.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${e.team==="volley"?"selected":""}>🐦‍⬛ Istria Volley</option></select></label>
     <div class="row2"><label class="field">Data<input type="date" id="eDate" value="${e.date}"></label><label class="field">Ora<input type="time" id="eTime" value="${e.time}"></label></div>
     <label class="field">Campo / Luogo<select id="eField">${fo}</select></label>
     <label class="field" id="oppWrap" style="${e.kind==="partita"?"":"display:none"}">Avversario<input type="text" id="eOpp" value="${esc(e.opponent)}"></label>
+    <div id="resultBox"></div>
     <label class="field">Note<input type="text" id="eNote" value="${esc(e.note)}"></label>
     <div class="modal-actions">${id?`<button class="btn danger" onclick="delEvent('${id}')">Elimina</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="saveEvent()">Salva</button></div>`);
+  updateEventForm();
 }
-function toggleOpp(){ document.getElementById("oppWrap").style.display=document.querySelector('input[name="ekind"]:checked').value==="partita"?"":"none"; }
+function updateEventForm(){
+  const kind=document.querySelector('input[name="ekind"]:checked').value;
+  const team=document.getElementById("eTeam").value;
+  document.getElementById("oppWrap").style.display=kind==="partita"?"":"none";
+  const box=document.getElementById("resultBox");
+  if(kind!=="partita"){ box.innerHTML=""; return; }
+  const e=editingEvent||{};
+  const sf=e.scoreFor!=null?e.scoreFor:"", sa=e.scoreAgainst!=null?e.scoreAgainst:"";
+  const unit=team==="calcio"?"Gol":"Set/Punti";
+  let html=`<div class="card" style="background:#fafbfd;padding:12px;margin-bottom:12px">
+    <div style="font-weight:700;margin-bottom:8px">Risultato (lasciare vuoto se non ancora giocata)</div>
+    <div class="row2">
+      <label class="field">${unit} ${TEAMS[team].name}<input type="number" id="eScoreFor" min="0" value="${sf}"></label>
+      <label class="field">${unit} avversario<input type="number" id="eScoreAgainst" min="0" value="${sa}"></label>
+    </div>`;
+  if(team==="calcio"){
+    const roster=db.players.filter(p=>p.team==="calcio").sort((a,b)=>a.name.localeCompare(b.name));
+    const sc=(e.scorers||[]).reduce((o,s)=>{ o[s.playerId]=s.goals; return o; },{});
+    html+=`<div style="font-weight:700;margin:6px 0 6px">⚽ Marcatori</div>`;
+    html+= roster.length? roster.map(p=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="flex:1">${esc(p.name)}</span>
+        <input type="number" min="0" id="sc-${p.id}" value="${sc[p.id]||""}" placeholder="0" style="width:70px;text-align:center">
+      </div>`).join("") : `<div class="hint">Nessun giocatore di calcio inserito. Aggiungili nella scheda Giocatori.</div>`;
+  }
+  box.innerHTML=html+`</div>`;
+}
 function saveEvent(){
-  const o={kind:document.querySelector('input[name="ekind"]:checked').value,team:document.getElementById("eTeam").value,date:document.getElementById("eDate").value||todayISO(),time:document.getElementById("eTime").value,field:document.getElementById("eField").value,opponent:document.getElementById("eOpp").value.trim(),note:document.getElementById("eNote").value.trim()};
+  const kind=document.querySelector('input[name="ekind"]:checked').value;
+  const team=document.getElementById("eTeam").value;
+  const o={kind,team,date:document.getElementById("eDate").value||todayISO(),time:document.getElementById("eTime").value,field:document.getElementById("eField").value,opponent:document.getElementById("eOpp").value.trim(),note:document.getElementById("eNote").value.trim()};
+  if(kind==="partita"){
+    const sf=document.getElementById("eScoreFor").value, sa=document.getElementById("eScoreAgainst").value;
+    o.scoreFor=sf===""?null:parseInt(sf); o.scoreAgainst=sa===""?null:parseInt(sa);
+    o.scorers=[];
+    if(team==="calcio"){
+      db.players.filter(p=>p.team==="calcio").forEach(p=>{ const v=parseInt((document.getElementById("sc-"+p.id)||{}).value); if(v>0) o.scorers.push({playerId:p.id,goals:v}); });
+    }
+  }
   if(editingEvent) Object.assign(editingEvent,o); else db.events.push({id:uid(),...o});
   save(); closeModal(); renderAll();
 }
@@ -608,13 +705,13 @@ function loadDemo(){
   db={
     fields:["Campo Comunale","Palestra Centrale","Campo allenamento Nord"],
     players:[
-      {id:p1,name:"Mario Rossi",team:"calcio",quotaMensile:25,payments:{}},
-      {id:p2,name:"Luca Bianchi",team:"calcio",quotaMensile:25,payments:{}},
-      {id:p3,name:"Giulia Verdi",team:"volley",quotaMensile:20,payments:{}}
+      {id:p1,name:"Mario Rossi",team:"calcio",gender:"M",quotaMensile:30,quotaIscrizione:20,payments:{},iscrizioni:{}},
+      {id:p2,name:"Luca Bianchi",team:"calcio",gender:"M",quotaMensile:30,quotaIscrizione:20,payments:{},iscrizioni:{}},
+      {id:p3,name:"Giulia Verdi",team:"volley",gender:"F",quotaMensile:20,quotaIscrizione:50,payments:{},iscrizioni:{}}
     ],
     events:[
       {id:uid(),kind:"allenamento",team:"calcio",date:todayISO(),time:"19:00",field:"Campo allenamento Nord",opponent:"",note:""},
-      {id:uid(),kind:"partita",team:"calcio",date:mago(-1),time:"15:30",field:"Campo Comunale",opponent:"ASD Rovigno",note:"Campionato"},
+      {id:uid(),kind:"partita",team:"calcio",date:mago(-1),time:"15:30",field:"Campo Comunale",opponent:"ASD Rovigno",note:"Campionato",scoreFor:3,scoreAgainst:1,scorers:[{playerId:p1,goals:2},{playerId:p2,goals:1}]},
       {id:uid(),kind:"allenamento",team:"volley",date:todayISO(),time:"20:30",field:"Palestra Centrale",opponent:"",note:""}
     ],
     moves:[
@@ -626,8 +723,11 @@ function loadDemo(){
       {id:uid(),type:"entrata",team:"volley",classe:"straordinaria",amount:250,date:mago(0),category:"Eventi/Tornei",note:"Torneo estivo"}
     ]
   };
-  // pagamenti mensili di esempio
-  [p1,p2].forEach(pid=>{ const p=db.players.find(x=>x.id===pid); [0,1,2].forEach(i=>{ const k=mk(i),mv={id:uid(),type:"entrata",team:"calcio",classe:"standard",amount:25,date:todayISO(),category:"Quote giocatori",note:"Quota "+p.name}; db.moves.push(mv); p.payments[k]={amount:25,date:todayISO(),moveId:mv.id}; }); });
+  // pagamenti mensili + iscrizione di esempio
+  [p1,p2].forEach(pid=>{ const p=db.players.find(x=>x.id===pid);
+    [0,1,2].forEach(i=>{ const k=mk(i),mv={id:uid(),type:"entrata",team:"calcio",classe:"standard",amount:30,date:todayISO(),category:"Quote giocatori",note:"Quota "+p.name}; db.moves.push(mv); p.payments[k]={amount:30,date:todayISO(),moveId:mv.id}; });
+    const im={id:uid(),type:"entrata",team:"calcio",classe:"standard",amount:20,date:todayISO(),category:"Iscrizioni",note:"Iscrizione "+p.name}; db.moves.push(im); p.iscrizioni[s]={amount:20,date:todayISO(),moveId:im.id};
+  });
   save(); renderAll();
 }
 

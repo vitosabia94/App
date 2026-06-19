@@ -101,6 +101,7 @@
   #lock p{color:var(--muted);font-size:13px;margin:0 0 18px}
   #lock .err{color:var(--out);font-size:13px;min-height:18px;margin-top:8px}
   .app-hidden{display:none!important}
+  body.role-user .admin-only{display:none!important}
   /* monthly grid */
   .pgrid{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:14px}
   .pgrid table{min-width:680px}
@@ -193,14 +194,14 @@
   <!-- GIOCATORI -->
   <section class="view" id="view-giocatori">
     <div class="toolbar">
-      <button class="btn" onclick="openPlayer()">+ Nuovo giocatore</button>
+      <button class="btn admin-only" onclick="openPlayer()">+ Nuovo giocatore</button>
       <button class="btn ghost sm" onclick="changeSeason(-1)">‹</button>
       <b id="seasonLabel" style="min-width:120px;text-align:center"></b>
       <button class="btn ghost sm" onclick="changeSeason(1)">›</button>
       <div class="grow"></div>
       <span class="hint" id="quotaSummary"></span>
     </div>
-    <div class="hint" style="margin-bottom:8px">Tocca una casella del mese per segnare/annullare il pagamento. Ogni pagamento entra automaticamente in cassa come "Quote giocatori".</div>
+    <div class="hint admin-only" style="margin-bottom:8px">Tocca una casella del mese per segnare/annullare il pagamento. Ogni pagamento entra automaticamente in cassa come "Quote giocatori".</div>
     <div id="playersGrid"></div>
   </section>
 
@@ -224,8 +225,8 @@
   <!-- CALENDARIO -->
   <section class="view" id="view-calendario">
     <div class="toolbar">
-      <button class="btn" onclick="openEvent()">+ Nuovo evento</button>
-      <button class="btn ghost" onclick="openFields()">⚙️ Gestione campi</button>
+      <button class="btn admin-only" onclick="openEvent()">+ Nuovo evento</button>
+      <button class="btn ghost admin-only" onclick="openFields()">⚙️ Gestione campi</button>
       <div class="grow"></div>
       <select id="filterEvent" style="width:auto" onchange="renderEvents()">
         <option value="all">Tutti</option><option value="allenamento">Allenamenti</option><option value="partita">Partite</option>
@@ -279,6 +280,10 @@ const SUPABASE_URL="https://iybtpxnoqhlnxjbcspkl.supabase.co";
 const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5YnRweG5vcWhsbnhqYmNzcGtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTEwOTMsImV4cCI6MjA5NzQyNzA5M30.sTVm55EZRzAez9vSbA7ujwWukWsUZXAVPzMvTQcgkAU";
 /* ⬆️⬆️⬆️  fine configurazione  ⬆️⬆️⬆️ */
 
+/* Email degli AMMINISTRATORI (accesso completo). Tutti gli altri utenti
+   entrano come "giocatore" in sola lettura. Aggiungi qui altre email admin. */
+const ADMIN_EMAILS=["vitosabia3@gmail.com"];
+
 const TEAMS={calcio:{name:"F.C. Istria",emoji:"🐦‍⬛",cls:"calcio"},volley:{name:"Istria Volley",emoji:"🐦‍⬛",cls:"volley"}};
 const CATS={
   entrata:["Quote giocatori","Iscrizioni","Sponsor","Incasso partite","Eventi/Tornei","Contributi","Altro"],
@@ -322,12 +327,43 @@ async function doLogin(){
   currentUser=data.user; err.textContent=""; afterLogin();
 }
 async function afterLogin(){
+  isAdmin=!!currentUser && ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((currentUser.email||"").toLowerCase());
   await loadData();
   subscribeRealtime();
   document.getElementById("lock").style.display="none";
   document.getElementById("app").classList.remove("app-hidden");
   const lb=document.getElementById("logoutBtn"); if(lb&&currentUser) lb.title="Esci ("+currentUser.email+")";
+  applyRole();
   renderAll();
+}
+function myPlayer(){
+  if(!currentUser||!currentUser.email) return null;
+  const e=currentUser.email.toLowerCase();
+  return db.players.find(p=>p.email && p.email.toLowerCase()===e)||null;
+}
+function applyRole(){
+  document.body.classList.toggle("role-user",!isAdmin);
+  // schede visibili
+  const allowUser=["giocatori","certificati","calendario"];
+  document.querySelectorAll("#nav button").forEach(b=>{
+    b.style.display=(isAdmin||allowUser.includes(b.dataset.view))?"":"none";
+  });
+  // sottotitolo + scope
+  const sub=document.querySelector("header .sub");
+  document.getElementById("scope").style.display=isAdmin?"":"none";
+  if(!isAdmin){
+    const mp=myPlayer();
+    if(sub) sub.textContent="Area giocatore"+(mp?" — "+mp.name:"");
+    scope="all";
+    // porta l'utente sulla prima scheda consentita
+    const first=document.querySelector('#nav button[data-view="giocatori"]');
+    document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    if(first) first.classList.add("active");
+    document.getElementById("view-giocatori").classList.add("active");
+  }else{
+    if(sub) sub.textContent="F.C. Istria & Istria Volley — cassa unica";
+  }
 }
 async function logout(){
   if(!confirm("Vuoi uscire?")) return;
@@ -380,6 +416,7 @@ function subscribeRealtime(){
 }
 async function save(){
   if(!sb){ return; }
+  if(!isAdmin){ alert("Solo gli amministratori possono modificare i dati."); return; }
   myLastSave=Date.now(); db.updatedAt=myLastSave;
   const {error}=await sb.from("club_data").update({data:db,updated_at:new Date().toISOString()}).eq("id",1);
   if(error){ console.error(error); alert("Attenzione: salvataggio non riuscito. Controlla la connessione.\n"+error.message); }
@@ -395,6 +432,7 @@ function migrate(d){
     if(p.quotaIscrizione==null) p.quotaIscrizione=QUOTA_ISCRIZIONE[p.gender];
     if(!p.iscrizioni) p.iscrizioni={};
     if(p.certScadenza==null) p.certScadenza="";
+    if(p.email==null) p.email="";
   });
   d.events.forEach(e=>{ if(e.kind==="partita"&&!e.scorers) e.scorers=[]; });
   return d;
@@ -402,6 +440,7 @@ function migrate(d){
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
 /* ============ STATE ============ */
+let isAdmin=true;
 let scope="all", editingMove=null, editingPlayer=null, editingEvent=null;
 let seasonStart=defaultSeasonStart();
 function defaultSeasonStart(){ const n=new Date(); return n.getMonth()>=6?n.getFullYear():n.getFullYear()-1; }
@@ -496,6 +535,7 @@ function renderMoves(){
   document.getElementById("movesTable").innerHTML=list.length?movesTableHTML(list,true):`<div class="empty">Nessun movimento.</div>`;
 }
 function openMove(id){
+  if(!isAdmin) return;
   editingMove=id?db.moves.find(m=>m.id===id):null;
   const m=editingMove||{type:"entrata",team:scope==="volley"?"volley":"calcio",date:todayISO(),amount:"",category:"",classe:"standard",note:""};
   const opts=t=>CATS[t].map(c=>`<option ${m.category===c?"selected":""}>${c}</option>`).join("");
@@ -536,10 +576,11 @@ function changeSeason(d){ seasonStart+=d; renderPlayers(); }
 function renderPlayers(){
   document.getElementById("seasonLabel").textContent="Stagione "+seasonStart+"/"+String(seasonStart+1).slice(2);
   const months=seasonMonths(seasonStart);
-  const list=db.players.filter(p=>inScope(p.team)).sort((a,b)=>a.name.localeCompare(b.name));
+  let list=db.players.filter(p=>inScope(p.team)).sort((a,b)=>a.name.localeCompare(b.name));
+  if(!isAdmin){ const mp=myPlayer(); list=mp?[mp]:[]; }
   let totPaid=0,totDue=0;
   const el=document.getElementById("playersGrid");
-  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore. Aggiungine uno con <b>+ Nuovo giocatore</b>.</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }
+  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">${isAdmin?"Nessun giocatore. Aggiungine uno con <b>+ Nuovo giocatore</b>.":"Nessun profilo collegato al tuo account. Contatta la società."}</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }
   let rows="";
   list.forEach(p=>{
     // colonna iscrizione (una tantum a inizio stagione)
@@ -547,23 +588,27 @@ function renderPlayers(){
     totDue+=p.quotaIscrizione||0;
     let iCls="unpaid",iTxt="−";
     if(isc){ totPaid+=isc.amount; iCls="paid"; iTxt="✓"; }
-    const iscCell=`<td><div class="mcell ${iCls}" title="Iscrizione${isc?' · '+eur(isc.amount):' · '+eur(p.quotaIscrizione||0)}" onclick="toggleIscrizione('${p.id}')">${iTxt}</div></td>`;
+    const iscClick=isAdmin?` onclick="toggleIscrizione('${p.id}')"`:"";
+    const iscCell=`<td><div class="mcell ${iCls}" title="Iscrizione${isc?' · '+eur(isc.amount):' · '+eur(p.quotaIscrizione||0)}"${iscClick}>${iTxt}</div></td>`;
     let cells="";
     months.forEach(mo=>{
       const pay=p.payments[mo.key];
       totDue+=p.quotaMensile||0;
       let cls="unpaid",txt="−";
       if(pay){ totPaid+=pay.amount; cls=(p.quotaMensile&&pay.amount<p.quotaMensile)?"partial":"paid"; txt="✓"; }
-      cells+=`<td><div class="mcell ${cls}" title="${mo.label} ${mo.year}${pay?' · '+eur(pay.amount):''}" onclick="toggleMonth('${p.id}','${mo.key}')">${txt}</div></td>`;
+      const mClick=isAdmin?` onclick="toggleMonth('${p.id}','${mo.key}')"`:"";
+      cells+=`<td><div class="mcell ${cls}" title="${mo.label} ${mo.year}${pay?' · '+eur(pay.amount):''}"${mClick}>${txt}</div></td>`;
     });
     const paidCount=months.filter(mo=>p.payments[mo.key]).length;
+    const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a>`:"";
     rows+=`<tr><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?"♀":"♂"}</span>
-      <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} mesi <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a></div></td>${iscCell}${cells}</tr>`;
+      <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} mesi${pencil}</div></td>${iscCell}${cells}</tr>`;
   });
   el.innerHTML=`<div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   document.getElementById("quotaSummary").innerHTML=`Stagione: incassato <b>${eur(totPaid)}</b> / previsto <b>${eur(totDue)}</b> · manca <b style="color:var(--out)">${eur(totDue-totPaid)}</b>`;
 }
 function toggleMonth(pid,key){
+  if(!isAdmin) return;
   const p=db.players.find(x=>x.id===pid);
   if(p.payments[key]){
     if(!confirm("Annullare il pagamento di questo mese? Verrà rimossa anche l'entrata in cassa.")) return;
@@ -590,6 +635,7 @@ function confirmMonth(pid,key){
   save(); closeModal(); renderAll();
 }
 function toggleIscrizione(pid){
+  if(!isAdmin) return;
   const p=db.players.find(x=>x.id===pid);
   if(p.iscrizioni[seasonStart]){
     if(!confirm("Annullare l'iscrizione di questa stagione? Verrà rimossa anche l'entrata in cassa.")) return;
@@ -613,6 +659,7 @@ function confirmIscrizione(pid){
   save(); closeModal(); renderAll();
 }
 function openPlayer(id){
+  if(!isAdmin) return;
   editingPlayer=id?db.players.find(p=>p.id===id):null;
   const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",gender:"M",quotaMensile:QUOTA_MENSILE.M,quotaIscrizione:QUOTA_ISCRIZIONE.M};
   showModal(`<h2>${id?"Modifica":"Nuovo"} giocatore</h2>
@@ -626,7 +673,8 @@ function openPlayer(id){
       <label class="field">Iscrizione (€)<input type="number" id="pIscr" step="0.01" min="0" value="${p.quotaIscrizione}"></label>
     </div>
     <label class="field">Scadenza certificato medico<input type="date" id="pCert" value="${p.certScadenza||""}"></label>
-    <p class="hint">Il genere imposta le quote standard (Uomo 30€/mese + 20€ iscr. · Donna 20€/mese + 50€ iscr.). Puoi comunque modificarle a mano.</p>
+    <label class="field">Email account giocatore (per il login in sola lettura)<input type="email" id="pEmail" value="${esc(p.email||"")}" placeholder="es. mario.rossi@email.it"></label>
+    <p class="hint">L'email collega la scheda all'account del giocatore: accedendo vedrà solo i propri pagamenti e certificato. Il genere imposta le quote standard (Uomo 30€/mese + 20€ iscr. · Donna 20€/mese + 50€ iscr.), comunque modificabili.</p>
     <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
 }
 function applyGenderDefaults(){
@@ -637,7 +685,7 @@ function applyGenderDefaults(){
 function savePlayer(){
   const name=document.getElementById("pName").value.trim();
   if(!name){ alert("Inserisci il nome."); return; }
-  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,certScadenza:document.getElementById("pCert").value||""};
+  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,certScadenza:document.getElementById("pCert").value||"",email:(document.getElementById("pEmail").value||"").trim()};
   if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},iscrizioni:{},...o});
   save(); closeModal(); renderAll();
 }
@@ -655,6 +703,7 @@ function certStatus(dateStr){
 function renderCerts(){
   const f=document.getElementById("filterCert").value;
   let list=db.players.filter(p=>inScope(p.team));
+  if(!isAdmin){ const mp=myPlayer(); list=mp?[mp]:[]; }
   const counts={scaduto:0,scadenza:0,valido:0,mancante:0};
   list.forEach(p=>counts[certStatus(p.certScadenza).key]++);
   document.getElementById("certSummary").innerHTML=
@@ -665,20 +714,23 @@ function renderCerts(){
   list=list.filter(p=>f==="all"||certStatus(p.certScadenza).key===f)
            .sort((a,b)=>{ const A=a.certScadenza||"9999",B=b.certScadenza||"9999"; return A.localeCompare(B); });
   const el=document.getElementById("certList");
-  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore in questo gruppo.</div></div>`; return; }
+  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">${isAdmin?"Nessun giocatore in questo gruppo.":"Nessun profilo collegato al tuo account. Contatta la società."}</div></div>`; return; }
   el.innerHTML=`<div class="card" style="padding:6px 8px"><table><thead><tr><th>Giocatore</th><th>Squadra</th><th>Scadenza</th><th>Stato</th></tr></thead><tbody>${
     list.map(p=>{ const s=certStatus(p.certScadenza);
       const extra=s.days==null?"":(s.days<0?`scaduto da ${-s.days} gg`:`tra ${s.days} gg`);
+      const dateCell=isAdmin
+        ? `<input type="date" value="${p.certScadenza}" style="width:auto;margin:0;padding:6px 8px" onchange="setCert('${p.id}',this.value)">`
+        : (p.certScadenza?fmtDate(p.certScadenza):"—");
       return `<tr>
         <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?"♀":"♂"}</span></td>
         <td>${TEAMS[p.team].name}</td>
-        <td><input type="date" value="${p.certScadenza}" style="width:auto;margin:0;padding:6px 8px" onchange="setCert('${p.id}',this.value)"></td>
+        <td>${dateCell}</td>
         <td><span class="pill ${s.cls}">${s.label}</span> <span class="hint">${extra}</span></td>
       </tr>`;
     }).join("")
   }</tbody></table></div>`;
 }
-function setCert(pid,val){ const p=db.players.find(x=>x.id===pid); if(p){ p.certScadenza=val; save(); renderCerts(); } }
+function setCert(pid,val){ if(!isAdmin) return; const p=db.players.find(x=>x.id===pid); if(p){ p.certScadenza=val; save(); renderCerts(); } }
 
 /* ============ CALENDARIO ============ */
 function renderEvents(){
@@ -703,12 +755,14 @@ function evHTML(e){
     const names=e.scorers.map(s=>{ const p=db.players.find(x=>x.id===s.playerId); return (p?esc(p.name):"?")+(s.goals>1?" ("+s.goals+")":""); });
     scorers=`<div class="hint">⚽ ${names.join(", ")}</div>`;
   }
-  return `<div style="border-left:4px solid var(--${TEAMS[e.team].cls});padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;display:flex;gap:12px;align-items:center;cursor:pointer" onclick="openEvent('${e.id}')">
+  const clickable=isAdmin?`cursor:pointer" onclick="openEvent('${e.id}')"`:`"`;
+  return `<div style="border-left:4px solid var(--${TEAMS[e.team].cls});padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;display:flex;gap:12px;align-items:center;${clickable}>
     <div style="text-align:center;min-width:46px"><div style="font-size:20px;font-weight:800">${d.getDate()}</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">${MONTHS[d.getMonth()]}</div></div>
     <div style="flex:1"><div style="font-weight:700">${icon} ${e.kind==="partita"?("vs "+esc(e.opponent||"—")):"Allenamento"} <span class="pill ${TEAMS[e.team].cls}">${TEAMS[e.team].emoji}</span>${result}</div>
     <div class="hint">${e.time||"--:--"} · 📍 ${esc(e.field||"—")}${e.note?" · "+esc(e.note):""}</div>${scorers}</div></div>`;
 }
 function openEvent(id){
+  if(!isAdmin) return;
   editingEvent=id?db.events.find(e=>e.id===id):null;
   const e=editingEvent||{kind:"allenamento",team:scope==="volley"?"volley":"calcio",date:todayISO(),time:"19:00",field:db.fields[0]||"",opponent:"",note:""};
   const fo=db.fields.map(f=>`<option ${e.field===f?"selected":""}>${esc(f)}</option>`).join("");
@@ -767,6 +821,7 @@ function saveEvent(){
 }
 function delEvent(id){ if(confirm("Eliminare l'evento?")){ db.events=db.events.filter(e=>e.id!==id); save(); closeModal(); renderAll(); } }
 function openFields(){
+  if(!isAdmin) return;
   showModal(`<h2>Gestione campi / luoghi</h2><div id="fieldList">${db.fields.map((f,i)=>`<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><input type="text" value="${esc(f)}" class="fEdit"><button class="btn danger sm" onclick="rmField(${i})">✕</button></div>`).join("")}</div>
     <button class="btn ghost sm" onclick="addField()">+ Aggiungi campo</button>
     <div class="modal-actions"><button class="btn ghost" onclick="closeModal()">Chiudi</button><button class="btn" onclick="saveFields()">Salva</button></div>`);

@@ -56,6 +56,31 @@ diversi, con login personale e sincronizzazione in tempo reale.
 
 ---
 
+## Ruoli: amministratori e giocatori
+L'app ha due tipi di accesso:
+
+- **Amministratore** — vede e modifica tutto (bilancio, movimenti, quote, certificati, calendario).
+  Gli admin sono definiti per email nel file `cloud.html`, nella sezione CONFIG:
+  ```js
+  const ADMIN_EMAILS=["vitosabia3@gmail.com"];
+  ```
+  Aggiungi qui le email (separate da virgola) di chi deve avere accesso completo.
+
+- **Giocatore** — chi accede con un'email **non** presente in `ADMIN_EMAILS` entra in **sola lettura**
+  e vede soltanto: i **propri** pagamenti quote, il **proprio** certificato medico e il
+  **calendario/risultati** della squadra. Non vede bilancio, movimenti né pulsanti di modifica.
+
+### Collegare un account giocatore alla sua scheda
+1. Crea l'utente del giocatore in **Authentication → Users** (email + password + Auto Confirm).
+2. Da admin, apri la scheda del giocatore (**Giocatori → ✏️**) e inserisci la **stessa email**
+   nel campo *"Email account giocatore"*. Salva.
+3. Quando il giocatore accede con quell'email, vedrà automaticamente solo i propri dati.
+
+> ⚠️ Nota sicurezza: questa separazione è a livello di interfaccia (come concordato). I dati
+> tecnici risiedono in un unico contenitore: è la scelta "semplice". Se in futuro vorrai una
+> protezione totale (i giocatori non possono accedere ai dati finanziari nemmeno tecnicamente),
+> si può evolvere separando i dati con regole sul server.
+
 ## Note utili
 - **Backup**: i dati sono nel cloud, ma esporta ogni tanto un JSON come copia di sicurezza.
 - **Modifiche contemporanee**: se due persone salvano nello stesso identico momento, vince

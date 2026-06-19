@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup Power App - Gestione Progetti</title>
+<style>
+  :root{
+    --primary:#742774;      /* viola Power Apps */
+    --primary-dark:#5a1d5a;
+    --bg:#f3f2f1;
+    --card:#ffffff;
+    --border:#e1dfdd;
+    --text:#323130;
+    --muted:#605e5c;
+    --accent:#0078d4;
+    --green:#107c10;
+    --amber:#ffaa44;
+    --red:#d13438;
+  }
+  *{box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif;margin:0;padding:0;}
+  body{background:#605e5c;padding:30px;color:var(--text);}
+  h1.page{color:#fff;text-align:center;font-weight:600;margin-bottom:6px;}
+  p.sub{color:#d6d6d6;text-align:center;margin-bottom:28px;font-size:14px;}
+  .row{display:flex;gap:40px;justify-content:center;align-items:flex-start;flex-wrap:wrap;}
+  .device-label{color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;text-align:center;font-weight:600;}
+
+  /* ---------- Telaio dispositivi ---------- */
+  .frame{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.4);}
+  .desktop{width:760px;height:480px;}
+  .mobile{width:300px;height:560px;border-radius:26px;border:9px solid #222;}
+
+  /* ---------- Header ---------- */
+  .header{background:var(--primary);color:#fff;display:flex;align-items:center;
+          gap:12px;padding:0 16px;height:52px;flex-shrink:0;}
+  .hamburger{font-size:22px;cursor:pointer;width:30px;text-align:center;}
+  .logo{width:26px;height:26px;background:#fff;border-radius:6px;display:flex;
+        align-items:center;justify-content:center;color:var(--primary);font-weight:700;font-size:14px;}
+  .title{font-size:16px;font-weight:600;}
+  .header .spacer{flex:1;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:#a64ca6;display:flex;
+          align-items:center;justify-content:center;font-size:13px;}
+
+  /* ---------- Body layout ---------- */
+  .body{display:flex;height:calc(100% - 52px);}
+
+  /* ---------- Pannello filtri ---------- */
+  .filters{width:230px;background:var(--card);border-right:1px solid var(--border);
+           padding:18px 16px;overflow:auto;flex-shrink:0;}
+  .filters h3{font-size:13px;text-transform:uppercase;color:var(--muted);
+              letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;}
+  .field input,.field select{width:100%;padding:7px 9px;border:1px solid var(--border);
+              border-radius:4px;font-size:13px;background:#faf9f8;}
+  .chip{display:inline-block;background:#efe4ef;color:var(--primary);border-radius:12px;
+        padding:3px 9px;font-size:11px;margin:2px 3px 2px 0;}
+  .btns{display:flex;gap:8px;margin-top:8px;}
+  .btn{flex:1;padding:8px;border:none;border-radius:4px;font-size:13px;cursor:pointer;font-weight:600;}
+  .btn-apply{background:var(--primary);color:#fff;}
+  .btn-reset{background:#f3f2f1;color:var(--text);border:1px solid var(--border);}
+
+  /* ---------- Contenuto ---------- */
+  .content{flex:1;padding:18px;overflow:auto;background:var(--bg);}
+  .content .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .content .toolbar .count{font-size:13px;color:var(--muted);}
+  .content .toolbar .new{background:var(--primary);color:#fff;border:none;border-radius:4px;
+        padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600;}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));}
+  .mobile .grid{grid-template-columns:1fr;}
+
+  /* ---------- Card progetto ---------- */
+  .pcard{background:var(--card);border:1px solid var(--border);border-radius:8px;
+         padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.05);}
+  .pcard .pname{font-weight:600;font-size:14px;margin-bottom:4px;}
+  .pcard .pplant{font-size:12px;color:var(--muted);margin-bottom:10px;}
+  .pcard .pmeta{font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px;}
+  .pcard .pmeta b{color:var(--text);font-weight:600;}
+  .status{display:inline-block;border-radius:10px;padding:2px 8px;font-size:10px;
+          font-weight:600;margin-top:10px;}
+  .s-green{background:#dff6dd;color:var(--green);}
+  .s-amber{background:#fff4ce;color:#8a6d00;}
+  .s-red{background:#fde7e9;color:var(--red);}
+  .folder{display:inline-flex;align-items:center;gap:4px;color:var(--accent);
+          font-size:11px;margin-top:8px;text-decoration:none;}
+
+  /* ---------- Overlay mobile ---------- */
+  .mobile .body{position:relative;}
+  .mobile .filters{position:absolute;top:0;left:0;height:100%;z-index:5;width:80%;
+                   box-shadow:6px 0 18px rgba(0,0,0,.25);}
+  .overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:4;}
+  .note{color:#fff;font-size:12px;text-align:center;margin-top:8px;max-width:300px;line-height:1.5;}
+</style>
+</head>
+<body>
+  <h1 class="page">Gestione Progetti — Power App</h1>
+  <p class="sub">Mockup responsive · pannello filtri fisso su desktop, a comparsa su mobile</p>
+
+  <div class="row">
+
+    <!-- ============ DESKTOP ============ -->
+    <div>
+      <div class="device-label">💻 Desktop / Tablet</div>
+      <div class="frame desktop">
+        <div class="header">
+          <span class="hamburger">☰</span>
+          <span class="logo">P</span>
+          <span class="title">Gestione Progetti</span>
+          <span class="spacer"></span>
+          <span class="avatar">VS</span>
+        </div>
+        <div class="body">
+          <!-- filtri fissi -->
+          <div class="filters">
+            <h3>🔎 Filtri</h3>
+            <div class="field">
+              <label>Cerca progetto</label>
+              <input placeholder="Nome progetto...">
+            </div>
+            <div class="field">
+              <label>Plant</label>
+              <select><option>(Tutti)</option><option>Milano</option><option>Torino</option></select>
+            </div>
+            <div class="field">
+              <label>Project Manager</label>
+              <select><option>(Tutti)</option><option>M. Rossi</option><option>L. Bianchi</option></select>
+            </div>
+            <div class="field">
+              <label>Stato</label>
+              <div>
+                <span class="chip">On track ×</span>
+                <span class="chip">At risk ×</span>
+              </div>
+            </div>
+            <div class="btns">
+              <button class="btn btn-reset">Reset</button>
+              <button class="btn btn-apply">Applica</button>
+            </div>
+          </div>
+          <!-- contenuto -->
+          <div class="content">
+            <div class="toolbar">
+              <span class="count">8 progetti trovati</span>
+              <button class="new">+ Nuovo progetto</button>
+            </div>
+            <div class="grid">
+              <div class="pcard">
+                <div class="pname">Linea Imballaggio 4.0</div>
+                <div class="pplant">Plant: Milano</div>
+                <div class="pmeta">
+                  <span>PM: <b>M. Rossi</b></span>
+                  <span>Sponsor: <b>A. Verdi</b></span>
+                </div>
+                <span class="status s-green">● On track</span><br>
+                <a class="folder" href="#">📁 Cartella progetto</a>
+              </div>
+              <div class="pcard">
+                <div class="pname">Digitalizzazione Magazzino</div>
+                <div class="pplant">Plant: Torino</div>
+                <div class="pmeta">
+                  <span>PM: <b>L. Bianchi</b></span>
+                  <span>Sponsor: <b>C. Neri</b></span>
+                </div>
+                <span class="status s-amber">● At risk</span><br>
+                <a class="folder" href="#">📁 Cartella progetto</a>
+              </div>
+              <div class="pcard">
+                <div class="pname">Efficienza Energetica</div>
+                <div class="pplant">Plant: Milano</div>
+                <div class="pmeta">
+                  <span>PM: <b>M. Rossi</b></span>
+                  <span>Sponsor: <b>A. Verdi</b></span>
+                </div>
+                <span class="status s-red">● Delayed</span><br>
+                <a class="folder" href="#">📁 Cartella progetto</a>
+              </div>
+              <div class="pcard">
+                <div class="pname">Nuovo MES</div>
+                <div class="pplant">Plant: Torino</div>
+                <div class="pmeta">
+                  <span>PM: <b>L. Bianchi</b></span>
+                  <span>Sponsor: <b>C. Neri</b></span>
+                </div>
+                <span class="status s-green">● On track</span><br>
+                <a class="folder" href="#">📁 Cartella progetto</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MOBILE ============ -->
+    <div>
+      <div class="device-label">📱 Mobile — menu aperto</div>
+      <div class="frame mobile">
+        <div class="header">
+          <span class="hamburger">✕</span>
+          <span class="logo">P</span>
+          <span class="title" style="font-size:14px;">Progetti</span>
+        </div>
+        <div class="body">
+          <!-- overlay scuro dietro -->
+          <div class="overlay"></div>
+          <!-- pannello filtri sopra (a comparsa) -->
+          <div class="filters">
+            <h3>🔎 Filtri</h3>
+            <div class="field">
+              <label>Cerca progetto</label>
+              <input placeholder="Nome...">
+            </div>
+            <div class="field">
+              <label>Plant</label>
+              <select><option>(Tutti)</option></select>
+            </div>
+            <div class="field">
+              <label>Project Manager</label>
+              <select><option>(Tutti)</option></select>
+            </div>
+            <div class="btns">
+              <button class="btn btn-reset">Reset</button>
+              <button class="btn btn-apply">Applica</button>
+            </div>
+          </div>
+          <!-- contenuto sotto -->
+          <div class="content">
+            <div class="toolbar">
+              <span class="count">8 prog.</span>
+              <button class="new">+ Nuovo</button>
+            </div>
+            <div class="grid">
+              <div class="pcard">
+                <div class="pname">Linea Imballaggio 4.0</div>
+                <div class="pplant">Plant: Milano</div>
+                <span class="status s-green">● On track</span>
+              </div>
+              <div class="pcard">
+                <div class="pname">Digit. Magazzino</div>
+                <div class="pplant">Plant: Torino</div>
+                <span class="status s-amber">● At risk</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note">Tocca ☰ per aprire i filtri.<br>L'overlay scuro chiude il menu.</p>
+    </div>
+
+  </div>
+</body>
+</html>

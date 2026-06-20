@@ -108,9 +108,10 @@
   .pgrid th,.pgrid td{text-align:center;padding:7px 6px;font-size:13px}
   .pgrid td.name,.pgrid th.name{text-align:left;position:sticky;left:0;background:#fff;font-weight:700;white-space:nowrap;min-width:140px}
   .mcell{cursor:pointer;border-radius:8px;width:34px;height:30px;line-height:30px;margin:auto;font-weight:700;font-size:12px;user-select:none}
-  .mcell.paid{background:#e3f6ec;color:var(--in)}
+  .mcell.paid{background:#e3f6ec;color:var(--in);font-size:11px}
   .mcell.unpaid{background:#f4f5f7;color:#c2cad2}
-  .mcell.partial{background:#fff5e0;color:#b9852b}
+  .mcell.partial{background:#fff5e0;color:#b9852b;font-size:11px}
+  .mcell.absent{background:#f0f0f0;color:#aaa;font-style:italic;font-size:11px}
   footer{text-align:center;color:var(--muted);font-size:12px;padding:18px}
   @media print{header,nav,.toolbar,.btn,footer,.lockbtn{display:none!important}.view{display:block!important}body{background:#fff}.card{box-shadow:none;break-inside:avoid}#lock{display:none!important}}
 </style>
@@ -120,20 +121,18 @@
 <!-- LOGIN SCREEN -->
 <div id="lock">
   <div class="box">
-    <img src="logo.png" alt="Logo" class="logo-lg" onerror="logoErr(this)">
+    <img src="logo.svg" alt="Logo" class="logo-lg">
     <h1>Gestione Istria</h1>
-    <p id="lockMsg">Accedi con le tue credenziali</p>
-    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
-    <input type="password" id="loginPwd" placeholder="Password" autocomplete="current-password" style="margin-top:10px" onkeydown="if(event.key==='Enter')doLogin()">
+    <p id="lockMsg">Inserisci la password per accedere</p>
+    <input type="password" id="loginPwd" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn" style="width:100%;margin-top:14px" onclick="doLogin()" id="lockBtn">Accedi</button>
     <div class="err" id="lockErr"></div>
-    <div class="hint" style="margin-top:12px"><a href="#" onclick="resetPwd();return false" style="color:var(--navy)">Password dimenticata?</a></div>
   </div>
 </div>
 
 <div id="app" class="app-hidden">
 <header>
-  <img src="logo.png" alt="Logo" class="logo" onerror="logoErr(this)">
+  <img src="logo.svg" alt="Logo" class="logo">
   <div>
     <h1>Gestione Istria</h1>
     <div class="sub">F.C. Istria &amp; Istria Volley — cassa unica</div>
@@ -294,106 +293,83 @@ const QUOTA_MENSILE={M:30,F:20};      // Uomini 30€/mese, Donne 20€/mese
 const QUOTA_ISCRIZIONE={M:20,F:50};   // Iscrizione: Uomini 20€, Donne 50€ (una tantum a inizio stagione)
 const MONTHS=["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
 
-/* ============ LOGO ============ */
-function logoErr(img){
-  if(img.dataset.tried!=="svg"){ img.dataset.tried="svg"; img.src="logo.svg"; return; }
-  const big=img.classList.contains("logo-lg");
-  const s=document.createElement("span"); s.textContent="🐦‍⬛"; s.style.fontSize=big?"60px":"28px";
-  img.replaceWith(s);
-}
+/* ============ AUTH (password semplice) ============ */
+// Hash SHA-256 delle password: admin=acquadimax, user=vaglimerda
+const HASH_ADMIN="357486d9f291cec6777a6f97c1735d24ee65a9ff750813154d1e95f70a905846";
+const HASH_USER ="8a9f284649b5e08901beb31d683b4d53bccdbfdbf481fa5b98a54af03ee3c976";
 
-/* ============ AUTH (Supabase) ============ */
-let sb=null, currentUser=null;
+let sb=null;
 function defaultDb(){ return {moves:[],players:[],events:[],fields:["Campo Comunale","Palestra","Campo allenamento"]}; }
 let db=defaultDb();
+
+async function sha256(str){
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
 
 function initAuth(){
   const err=document.getElementById("lockErr");
   if(!window.supabase){ err.textContent="Libreria non caricata: serve una connessione a internet."; return; }
   if(SUPABASE_URL.startsWith("INCOLLA")||SUPABASE_ANON_KEY.startsWith("INCOLLA")){
-    document.getElementById("lockMsg").textContent="Configurazione mancante";
-    err.innerHTML="Apri il file cloud.html e incolla SUPABASE_URL e SUPABASE_ANON_KEY nella sezione CONFIG in cima allo script. Vedi la guida SETUP-SUPABASE.md.";
+    err.innerHTML="Configurazione mancante: apri cloud.html e inserisci SUPABASE_URL e SUPABASE_ANON_KEY.";
     document.getElementById("lockBtn").disabled=true; return;
   }
   sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-  sb.auth.getSession().then(({data})=>{ if(data.session){ currentUser=data.session.user; afterLogin(); } else { document.getElementById("loginEmail").focus(); } });
+  // check sessione salvata in sessionStorage
+  const saved=sessionStorage.getItem("istria_role");
+  if(saved==="admin"||saved==="user"){ isAdmin=(saved==="admin"); afterLogin(); }
+  else document.getElementById("loginPwd").focus();
 }
+
 async function doLogin(){
-  const email=document.getElementById("loginEmail").value.trim();
   const pwd=document.getElementById("loginPwd").value;
-  const err=document.getElementById("lockErr"); err.textContent="Accesso in corso…";
-  const {data,error}=await sb.auth.signInWithPassword({email,password:pwd});
-  if(error){ err.textContent="Email o password non corretti."; return; }
-  currentUser=data.user; err.textContent=""; afterLogin();
+  const err=document.getElementById("lockErr"); err.textContent="";
+  if(!pwd){ err.textContent="Inserisci la password."; return; }
+  const h=await sha256(pwd);
+  if(h===HASH_ADMIN){ isAdmin=true; sessionStorage.setItem("istria_role","admin"); afterLogin(); }
+  else if(h===HASH_USER){ isAdmin=false; sessionStorage.setItem("istria_role","user"); afterLogin(); }
+  else { err.textContent="Password non corretta."; document.getElementById("loginPwd").value=""; }
 }
+
 async function afterLogin(){
-  isAdmin=!!currentUser && ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((currentUser.email||"").toLowerCase());
   await loadData();
   subscribeRealtime();
   document.getElementById("lock").style.display="none";
   document.getElementById("app").classList.remove("app-hidden");
-  const lb=document.getElementById("logoutBtn"); if(lb&&currentUser) lb.title="Esci ("+currentUser.email+")";
   applyRole();
   renderAll();
 }
-function myPlayer(){
-  if(!currentUser||!currentUser.email) return null;
-  const e=currentUser.email.toLowerCase();
-  return db.players.find(p=>p.email && p.email.toLowerCase()===e)||null;
-}
+
+function myPlayer(){ return null; }
+
 function applyRole(){
   document.body.classList.toggle("role-user",!isAdmin);
-  // schede visibili
   const allowUser=["giocatori","certificati","calendario"];
   document.querySelectorAll("#nav button").forEach(b=>{
     b.style.display=(isAdmin||allowUser.includes(b.dataset.view))?"":"none";
   });
-  // sottotitolo + scope
   const sub=document.querySelector("header .sub");
   document.getElementById("scope").style.display=isAdmin?"":"none";
   if(!isAdmin){
-    const mp=myPlayer();
-    if(sub) sub.textContent="Area giocatore"+(mp?" — "+mp.name:"");
+    if(sub) sub.textContent="Area giocatori — sola lettura";
     scope="all";
-    // porta l'utente sulla prima scheda consentita
-    const first=document.querySelector('#nav button[data-view="giocatori"]');
     document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
     document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    const first=document.querySelector('#nav button[data-view="giocatori"]');
     if(first) first.classList.add("active");
     document.getElementById("view-giocatori").classList.add("active");
   }else{
     if(sub) sub.textContent="F.C. Istria & Istria Volley — cassa unica";
   }
 }
-async function logout(){
-  if(!confirm("Vuoi uscire?")) return;
+
+function logout(){
+  sessionStorage.removeItem("istria_role");
   if(realtimeCh){ sb.removeChannel(realtimeCh); realtimeCh=null; }
-  await sb.auth.signOut(); currentUser=null;
   document.getElementById("app").classList.add("app-hidden");
   document.getElementById("lock").style.display="flex";
-  document.getElementById("loginPwd").value=""; document.getElementById("loginEmail").focus();
-}
-async function resetPwd(){
-  const email=document.getElementById("loginEmail").value.trim();
-  if(!email){ document.getElementById("lockErr").textContent="Inserisci prima la tua email, poi premi di nuovo."; return; }
-  const {error}=await sb.auth.resetPasswordForEmail(email);
-  document.getElementById("lockErr").textContent=error?"Errore nell'invio.":"Ti abbiamo inviato una email per reimpostare la password.";
-}
-function openChangePwd(){
-  showModal(`<h2>Cambia la mia password</h2>
-    <label class="field">Nuova password<input type="password" id="cpNew"></label>
-    <label class="field">Conferma nuova<input type="password" id="cpNew2"></label>
-    <div class="err" id="cpErr" style="color:var(--out);font-size:13px"></div>
-    <div class="modal-actions"><button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="doChangePwd()">Salva</button></div>`);
-}
-async function doChangePwd(){
-  const err=document.getElementById("cpErr");
-  const n=document.getElementById("cpNew").value;
-  if(n.length<6){ err.textContent="Almeno 6 caratteri."; return; }
-  if(n!==document.getElementById("cpNew2").value){ err.textContent="Le password non coincidono."; return; }
-  const {error}=await sb.auth.updateUser({password:n});
-  if(error){ err.textContent="Errore: "+error.message; return; }
-  closeModal(); alert("Password aggiornata.");
+  document.getElementById("loginPwd").value="";
+  document.getElementById("loginPwd").focus();
 }
 
 /* ============ STORAGE (Supabase: documento condiviso) ============ */
@@ -433,6 +409,7 @@ function migrate(d){
     if(!p.iscrizioni) p.iscrizioni={};
     if(p.certScadenza==null) p.certScadenza="";
     if(p.email==null) p.email="";
+    if(p.attivo==null) p.attivo=true;
   });
   d.events.forEach(e=>{ if(e.kind==="partita"&&!e.scorers) e.scorers=[]; });
   return d;
@@ -442,7 +419,7 @@ function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(
 /* ============ STATE ============ */
 let isAdmin=true;
 let scope="all", editingMove=null, editingPlayer=null, editingEvent=null;
-let seasonStart=defaultSeasonStart();
+let seasonStart=defaultSeasonStart(), showInactive=false;
 function defaultSeasonStart(){ const n=new Date(); return n.getMonth()>=6?n.getFullYear():n.getFullYear()-1; }
 
 /* ============ HELPERS ============ */
@@ -573,17 +550,51 @@ function delMove(id){ if(confirm("Eliminare questo movimento?")){ db.moves=db.mo
 
 /* ============ GIOCATORI & QUOTE MENSILI ============ */
 function changeSeason(d){ seasonStart+=d; renderPlayers(); }
+function toggleShowInactive(){ showInactive=!showInactive; renderPlayers(); }
+function playerGoals(pid){
+  let tot=0;
+  db.events.forEach(e=>{ if(e.scorers) e.scorers.forEach(s=>{ if(s.playerId===pid) tot+=s.goals||1; }); });
+  return tot;
+}
+function playerGoalsBySeason(pid){
+  const seasons={};
+  db.events.forEach(e=>{
+    if(!e.scorers||!e.date) return;
+    const [y,m]=e.date.split("-").map(Number);
+    const sYear=(m>=9?y:y-1);
+    e.scorers.forEach(s=>{
+      if(s.playerId!==pid) return;
+      seasons[sYear]=(seasons[sYear]||0)+(s.goals||1);
+    });
+  });
+  return seasons;
+}
+function playerPaymentsBySeason(p){
+  const seasons={};
+  Object.entries(p.payments||{}).forEach(([key,v])=>{
+    const [y,m]=key.split("-").map(Number);
+    const sYear=(m>=9?y:y-1);
+    if(!seasons[sYear]) seasons[sYear]={paid:0,count:0};
+    seasons[sYear].paid+=v.amount||0; seasons[sYear].count++;
+  });
+  Object.entries(p.iscrizioni||{}).forEach(([sYear,v])=>{
+    if(!seasons[sYear]) seasons[sYear]={paid:0,count:0};
+    seasons[sYear].paid+=(v.amount||0);
+  });
+  return seasons;
+}
 function renderPlayers(){
   document.getElementById("seasonLabel").textContent="Stagione "+seasonStart+"/"+String(seasonStart+1).slice(2);
   const months=seasonMonths(seasonStart);
   let list=db.players.filter(p=>inScope(p.team)).sort((a,b)=>a.name.localeCompare(b.name));
   if(!isAdmin){ const mp=myPlayer(); list=mp?[mp]:[]; }
+  const inactiveCount=list.filter(p=>!p.attivo).length;
+  const activeList=showInactive?list:list.filter(p=>p.attivo!==false);
   let totPaid=0,totDue=0;
   const el=document.getElementById("playersGrid");
-  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">${isAdmin?"Nessun giocatore. Aggiungine uno con <b>+ Nuovo giocatore</b>.":"Nessun profilo collegato al tuo account. Contatta la società."}</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }
+  if(!activeList.length){ el.innerHTML=`<div class="card"><div class="empty">${isAdmin?"Nessun giocatore. Aggiungine uno con <b>+ Nuovo giocatore</b>.":"Nessun profilo collegato al tuo account. Contatta la società."}</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }
   let rows="";
-  list.forEach(p=>{
-    // colonna iscrizione (una tantum a inizio stagione)
+  activeList.forEach(p=>{
     const isc=p.iscrizioni[seasonStart];
     totDue+=p.quotaIscrizione||0;
     let iCls="unpaid",iTxt="−";
@@ -593,36 +604,67 @@ function renderPlayers(){
     let cells="";
     months.forEach(mo=>{
       const pay=p.payments[mo.key];
-      totDue+=p.quotaMensile||0;
-      let cls="unpaid",txt="−";
-      if(pay){ totPaid+=pay.amount; cls=(p.quotaMensile&&pay.amount<p.quotaMensile)?"partial":"paid"; txt="✓"; }
+      let cls="unpaid",txt="−",titleExtra="";
+      if(pay && pay.assente){ cls="absent"; txt="A"; titleExtra=" · Assente"; }
+      else if(pay){ totPaid+=pay.amount; totDue+=p.quotaMensile||0; cls=(p.quotaMensile&&pay.amount<p.quotaMensile)?"partial":"paid"; txt=pay.amount>0?pay.amount+"":"✓"; titleExtra=" · "+eur(pay.amount); }
+      else { totDue+=p.quotaMensile||0; }
       const mClick=isAdmin?` onclick="toggleMonth('${p.id}','${mo.key}')"`:"";
-      cells+=`<td><div class="mcell ${cls}" title="${mo.label} ${mo.year}${pay?' · '+eur(pay.amount):''}"${mClick}>${txt}</div></td>`;
+      cells+=`<td><div class="mcell ${cls}" title="${mo.label} ${mo.year}${titleExtra}"${mClick}>${txt}</div></td>`;
     });
-    const paidCount=months.filter(mo=>p.payments[mo.key]).length;
-    const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a>`:"";
-    rows+=`<tr><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?"♀":"♂"}</span>
+    const paidCount=months.filter(mo=>p.payments[mo.key]&&!p.payments[mo.key].assente).length;
+    const inactiveBadge=p.attivo===false?` <span class="pill" style="background:#ccc;color:#555">Inattivo</span>`:"";
+    const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a> <a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy)" title="Storico">📋</a>`:"";
+    rows+=`<tr style="${p.attivo===false?'opacity:0.55':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?'<span style="background:#e8d5f5;color:#7b3fa0;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">F</span>':'<span style="background:#d5eaf5;color:#1a6091;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">M</span>'}</span>${inactiveBadge}
       <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} mesi${pencil}</div></td>${iscCell}${cells}</tr>`;
   });
-  el.innerHTML=`<div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  const toggleBtn=isAdmin&&inactiveCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi inattivi":"Mostra inattivi ("+inactiveCount+")"}</button>`:"";
+  el.innerHTML=`<div style="margin-bottom:6px">${toggleBtn}</div><div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   document.getElementById("quotaSummary").innerHTML=`Stagione: incassato <b>${eur(totPaid)}</b> / previsto <b>${eur(totDue)}</b> · manca <b style="color:var(--out)">${eur(totDue-totPaid)}</b>`;
 }
 function toggleMonth(pid,key){
   if(!isAdmin) return;
   const p=db.players.find(x=>x.id===pid);
-  if(p.payments[key]){
-    if(!confirm("Annullare il pagamento di questo mese? Verrà rimossa anche l'entrata in cassa.")) return;
-    const mvId=p.payments[key].moveId; db.moves=db.moves.filter(m=>m.id!==mvId); delete p.payments[key];
-    save(); renderAll(); return;
-  }
-  // chiedi importo (default quota mensile)
-  const def=p.quotaMensile||0;
   const [y,mm]=key.split("-"); const label=MONTHS[parseInt(mm)-1]+" "+y;
+  const pay=p.payments[key];
+
+  if(pay && pay.assente){
+    // era assente: rimuovi lo stato assente (torna a non pagato)
+    delete p.payments[key]; save(); renderAll(); return;
+  }
+  if(pay){
+    // già pagato: mostra opzioni
+    showModal(`<h2>${esc(p.name)} — ${label}</h2>
+      <p>Pagato: <b>${eur(pay.amount)}</b> il ${fmtDate(pay.date)}</p>
+      <div class="modal-actions">
+        <button class="btn danger" onclick="deleteMonth('${pid}','${key}')">Annulla pagamento</button>
+        <button class="btn ghost" onclick="markAbsent('${pid}','${key}')">Segna assente</button>
+        <button class="btn ghost" onclick="closeModal()">Chiudi</button>
+      </div>`);
+    return;
+  }
+  // non pagato: apri dialogo pagamento
+  const def=p.quotaMensile||0;
   showModal(`<h2>Pagamento ${esc(p.name)} — ${label}</h2>
     <label class="field">Importo (€)<input type="number" id="tmAmt" step="0.01" min="0" value="${def||""}"></label>
     <label class="field">Data pagamento<input type="date" id="tmDate" value="${todayISO()}"></label>
     <p class="hint">Crea un'entrata "Quote giocatori" (tipologia standard) nella cassa ${TEAMS[p.team].name}.</p>
-    <div class="modal-actions"><button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn green" onclick="confirmMonth('${pid}','${key}')">Registra</button></div>`);
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="markAbsent('${pid}','${key}')">Segna assente (quota €0)</button>
+      <button class="btn ghost" onclick="closeModal()">Annulla</button>
+      <button class="btn green" onclick="confirmMonth('${pid}','${key}')">Registra pagamento</button>
+    </div>`);
+}
+function deleteMonth(pid,key){
+  const p=db.players.find(x=>x.id===pid);
+  const mvId=p.payments[key].moveId; db.moves=db.moves.filter(m=>m.id!==mvId); delete p.payments[key];
+  save(); closeModal(); renderAll();
+}
+function markAbsent(pid,key){
+  const p=db.players.find(x=>x.id===pid);
+  // rimuovi eventuale movimento già registrato
+  if(p.payments[key]&&p.payments[key].moveId) db.moves=db.moves.filter(m=>m.id!==p.payments[key].moveId);
+  p.payments[key]={amount:0,assente:true};
+  save(); closeModal(); renderAll();
 }
 function confirmMonth(pid,key){
   const p=db.players.find(x=>x.id===pid);
@@ -661,7 +703,8 @@ function confirmIscrizione(pid){
 function openPlayer(id){
   if(!isAdmin) return;
   editingPlayer=id?db.players.find(p=>p.id===id):null;
-  const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",gender:"M",quotaMensile:QUOTA_MENSILE.M,quotaIscrizione:QUOTA_ISCRIZIONE.M};
+  const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",gender:"M",quotaMensile:QUOTA_MENSILE.M,quotaIscrizione:QUOTA_ISCRIZIONE.M,attivo:true};
+  const attivoChk=p.attivo!==false?"checked":"";
   showModal(`<h2>${id?"Modifica":"Nuovo"} giocatore</h2>
     <label class="field">Nome e cognome<input type="text" id="pName" value="${esc(p.name)}" placeholder="es. Mario Rossi"></label>
     <div class="row2">
@@ -674,8 +717,12 @@ function openPlayer(id){
     </div>
     <label class="field">Scadenza certificato medico<input type="date" id="pCert" value="${p.certScadenza||""}"></label>
     <label class="field">Email account giocatore (per il login in sola lettura)<input type="email" id="pEmail" value="${esc(p.email||"")}" placeholder="es. mario.rossi@email.it"></label>
-    <p class="hint">L'email collega la scheda all'account del giocatore: accedendo vedrà solo i propri pagamenti e certificato. Il genere imposta le quote standard (Uomo 30€/mese + 20€ iscr. · Donna 20€/mese + 50€ iscr.), comunque modificabili.</p>
-    <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
+    <label class="field" style="flex-direction:row;align-items:center;gap:10px;cursor:pointer">
+      <input type="checkbox" id="pAttivo" ${attivoChk} style="width:18px;height:18px;cursor:pointer">
+      <span>Giocatore attivo (deseleziona per segnare come ex-giocatore)</span>
+    </label>
+    <p class="hint">Il genere imposta le quote standard (Uomo 30€/mese + 20€ iscr. · Donna 20€/mese + 50€ iscr.), comunque modificabili. Gli ex-giocatori (inattivi) restano nello storico ma spariscono dalla griglia quote.</p>
+    <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button><button class="btn ghost" onclick="openPlayerHistory('${id}')">📋 Storico</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
 }
 function applyGenderDefaults(){
   const g=document.getElementById("pGender").value;
@@ -685,11 +732,36 @@ function applyGenderDefaults(){
 function savePlayer(){
   const name=document.getElementById("pName").value.trim();
   if(!name){ alert("Inserisci il nome."); return; }
-  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,certScadenza:document.getElementById("pCert").value||"",email:(document.getElementById("pEmail").value||"").trim()};
+  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,certScadenza:document.getElementById("pCert").value||"",email:(document.getElementById("pEmail").value||"").trim(),attivo:document.getElementById("pAttivo").checked};
   if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},iscrizioni:{},...o});
   save(); closeModal(); renderAll();
 }
-function delPlayer(id){ if(confirm("Eliminare il giocatore? (i movimenti già registrati restano)")){ db.players=db.players.filter(p=>p.id!==id); save(); closeModal(); renderAll(); } }
+function delPlayer(id){ if(confirm("Eliminare definitivamente il giocatore?\nSuggerimento: deseleziona 'Attivo' per conservare lo storico senza eliminare.")){ db.players=db.players.filter(p=>p.id!==id); save(); closeModal(); renderAll(); } }
+function openPlayerHistory(id){
+  const p=db.players.find(x=>x.id===id); if(!p) return;
+  const paySeasons=playerPaymentsBySeason(p);
+  const goalSeasons=p.team==="calcio"?playerGoalsBySeason(p.id):{};
+  const allSeasons=[...new Set([...Object.keys(paySeasons),...Object.keys(goalSeasons)])].sort((a,b)=>b-a);
+  let rows=allSeasons.map(sy=>{
+    const ps=paySeasons[sy]||{paid:0,count:0};
+    const gs=goalSeasons[sy]||0;
+    const label=sy+"/"+(parseInt(sy)+1).toString().slice(2);
+    const goalsCell=p.team==="calcio"?`<td style="text-align:center">${gs||"−"} ⚽</td>`:"";
+    return `<tr><td><b>${label}</b></td><td>${eur(ps.paid)}</td><td style="text-align:center">${ps.count}</td>${goalsCell}</tr>`;
+  }).join("");
+  if(!rows) rows=`<tr><td colspan="4" style="text-align:center;color:#aaa">Nessuno storico disponibile</td></tr>`;
+  const goalsHeader=p.team==="calcio"?`<th>Gol</th>`:"";
+  const totalGoals=p.team==="calcio"?playerGoals(p.id):null;
+  const goalSummary=p.team==="calcio"?`<p style="margin-top:8px">Totale gol in carriera: <b>${totalGoals} ⚽</b></p>`:"";
+  showModal(`<h2>📋 Storico — ${esc(p.name)}</h2>
+    <p style="margin-bottom:12px"><span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].name}</span> · ${p.gender==="F"?"♀ Donna":"♂ Uomo"} · <span style="color:${p.attivo!==false?"var(--in)":"#aaa"}">${p.attivo!==false?"Attivo":"Inattivo"}</span></p>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="border-bottom:2px solid #eee"><th style="text-align:left">Stagione</th><th>Pagato</th><th>Mesi</th>${goalsHeader}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${goalSummary}
+    <div class="modal-actions"><button class="btn ghost" onclick="openPlayer('${id}')">✏️ Modifica</button><button class="btn ghost" onclick="closeModal()">Chiudi</button></div>`);
+}
 
 /* ============ CERTIFICATI MEDICI ============ */
 function certStatus(dateStr){
@@ -702,7 +774,7 @@ function certStatus(dateStr){
 }
 function renderCerts(){
   const f=document.getElementById("filterCert").value;
-  let list=db.players.filter(p=>inScope(p.team));
+  let list=db.players.filter(p=>inScope(p.team)&&p.attivo!==false);
   if(!isAdmin){ const mp=myPlayer(); list=mp?[mp]:[]; }
   const counts={scaduto:0,scadenza:0,valido:0,mancante:0};
   list.forEach(p=>counts[certStatus(p.certScadenza).key]++);
@@ -722,7 +794,7 @@ function renderCerts(){
         ? `<input type="date" value="${p.certScadenza}" style="width:auto;margin:0;padding:6px 8px" onchange="setCert('${p.id}',this.value)">`
         : (p.certScadenza?fmtDate(p.certScadenza):"—");
       return `<tr>
-        <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?"♀":"♂"}</span></td>
+        <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?'<span style="background:#e8d5f5;color:#7b3fa0;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">F</span>':'<span style="background:#d5eaf5;color:#1a6091;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">M</span>'}</span></td>
         <td>${TEAMS[p.team].name}</td>
         <td>${dateCell}</td>
         <td><span class="pill ${s.cls}">${s.label}</span> <span class="hint">${extra}</span></td>

@@ -1,0 +1,29 @@
+{
+  "team": "calcio",
+  "stagione": "2024/25",
+  "partite": [
+    {"giornata":"1^Giornata",  "opponent":"F&C Lucca Manomeccanica",        "date":"2024-09-29","time":"10:30","scoreFor":7,"scoreAgainst":2,"scorers":[{"cognome":"Spinelli","gol":3},{"cognome":"Mocchi","gol":2},{"cognome":"Molè","gol":1},{"cognome":"Risi","gol":1}]},
+    {"giornata":"2^Giornata",  "opponent":"Real Vagli",                      "date":"2024-10-07","time":"21:00","scoreFor":5,"scoreAgainst":0,"scorers":[{"cognome":"Mocchi","gol":1},{"cognome":"Scaramozza","gol":1},{"cognome":"Capocasale","gol":1},{"cognome":"Spinelli","gol":1},{"cognome":"Villani","gol":1}]},
+    {"giornata":"3^Giornata",  "opponent":"Acquila Nozzano",                 "date":"2024-10-14","time":"21:00","scoreFor":4,"scoreAgainst":0,"scorers":[{"cognome":"Molè","gol":2},{"cognome":"Mocchi","gol":1},{"cognome":"Perri","gol":1}]},
+    {"giornata":"4^Giornata",  "opponent":"Gatti Matti Pariana",             "date":"2024-10-19","time":"15:30","scoreFor":2,"scoreAgainst":0,"scorers":[{"cognome":"Scaramozza","gol":1},{"cognome":"Spinelli","gol":1}]},
+    {"giornata":"5^Giornata",  "opponent":"Mologno",                        "date":"2024-10-28","time":"21:00","scoreFor":1,"scoreAgainst":1,"scorers":[{"cognome":"Perri","gol":1}],"note":"SGT"},
+    {"giornata":"6^Giornata",  "opponent":"Circolo La Scepre",               "date":"2024-11-11","time":"21:00","scoreFor":2,"scoreAgainst":1,"scorers":[{"cognome":"Villani","gol":1},{"cognome":"Mocchi","gol":1}]},
+    {"giornata":"7^Giornata",  "opponent":"Capannori Quick Heal",            "date":"2024-11-19","time":"21:15","scoreFor":4,"scoreAgainst":1,"scorers":[{"cognome":"Malfetti","gol":1},{"cognome":"Gionfriddo","gol":1},{"cognome":"Capocasale","gol":1},{"cognome":"Cecchi","gol":1}],"note":"SGT"},
+    {"giornata":"8^Giornata",  "opponent":"Partizan Borgo a Mozzano",        "date":"2024-11-23","time":"15:00","scoreFor":3,"scoreAgainst":1,"scorers":[{"cognome":"Scaramozza","gol":1},{"cognome":"Molè","gol":2}]},
+    {"giornata":"9^Giornata",  "opponent":"Vicas Amatori",                   "date":"2024-12-03","time":"21:00","scoreFor":6,"scoreAgainst":1,"scorers":[{"cognome":"Mocchi","gol":2},{"cognome":"Pistolesi","gol":1},{"cognome":"Molè","gol":1},{"cognome":"Cavallini","gol":1},{"cognome":"Gionfriddo","gol":1}],"note":"SGT"},
+    {"giornata":"10^Giornata", "opponent":"Lokomotivadipietreto",            "date":"2024-12-09","time":"21:00","scoreFor":0,"scoreAgainst":0,"scorers":[]},
+    {"giornata":"11^Giornata", "opponent":"Garzella Elettroinstallazioni",   "date":"2024-12-16","time":"21:00","scoreFor":1,"scoreAgainst":0,"scorers":[{"cognome":"Capocasale","gol":1}]},
+    {"giornata":"12^Giornata", "opponent":"Partizan Borgo a Mozzano",        "date":"2025-01-20","time":"21:00","scoreFor":3,"scoreAgainst":1,"scorers":[{"cognome":"Molè","gol":2},{"cognome":"Malfetti","gol":1}]},
+    {"giornata":"13^Giornata", "opponent":"Acquila Nozzano",                 "date":"2025-01-26","time":"10:30","scoreFor":6,"scoreAgainst":0,"scorers":[{"cognome":"Scaramozza","gol":2},{"cognome":"Mocchi","gol":2},{"cognome":"Spinelli","gol":1},{"cognome":"Capocasale","gol":1}]},
+    {"giornata":"14^Giornata", "opponent":"Circolo La Scepre",               "date":"2025-02-10","time":"21:00","scoreFor":2,"scoreAgainst":0,"scorers":[{"cognome":"Scafuri","gol":1},{"cognome":"Mocchi","gol":1}]},
+    {"giornata":"15^Giornata", "opponent":"Lokomotivadipietreto",            "date":"2025-02-18","time":"21:00","scoreFor":2,"scoreAgainst":0,"scorers":[{"cognome":"Mocchi","gol":1},{"cognome":"Molè","gol":1}]},
+    {"giornata":"16^Giornata", "opponent":"Gatti Matti Pariana",             "date":"2025-02-24","time":"21:00","scoreFor":6,"scoreAgainst":0,"scorers":[{"cognome":"Gionfriddo","gol":1},{"cognome":"Molè","gol":3},{"cognome":"Scaramozza","gol":1},{"cognome":"Perri","gol":1}]},
+    {"giornata":"17^Giornata", "opponent":"Vicas Amatori",                   "date":"2025-03-08","time":"15:00","scoreFor":4,"scoreAgainst":1,"scorers":[{"cognome":"Molè","gol":2},{"cognome":"Scafuri","gol":1},{"cognome":"Capocasale","gol":1}]},
+    {"giornata":"19^Giornata", "opponent":"Garzella Elettroistallazioni",    "date":"2025-03-24","time":"21:00","scoreFor":1,"scoreAgainst":1,"scorers":[{"cognome":"Mocchi","gol":1}]},
+    {"giornata":"20^Giornata", "opponent":"Capannori Quick Heal",            "date":"2025-04-05","time":"15:00","scoreFor":3,"scoreAgainst":0,"scorers":[{"cognome":"Mocchi","gol":2},{"cognome":"Molè","gol":1}]},
+    {"giornata":"21^Giornata", "opponent":"F&C Lucca Manomeccanica",         "date":"2025-04-14","time":"21:00","scoreFor":4,"scoreAgainst":0,"scorers":[{"cognome":"Almanza","gol":1},{"cognome":"Mocchi","gol":2},{"cognome":"Rossini","gol":1}]},
+    {"giornata":"18^Giornata", "opponent":"Real Vagli",                      "date":"2025-04-28","time":"21:00","scoreFor":6,"scoreAgainst":0,"scorers":[{"cognome":"Mocchi","gol":2},{"cognome":"Molè","gol":1},{"cognome":"Gionfriddo","gol":1},{"cognome":"Scaramozza","gol":1},{"cognome":"Bombacigno","gol":1}],"note":"Recupero"},
+    {"giornata":"22^Giornata", "opponent":"Mologno",                        "date":"2025-05-03","time":"16:00","scoreFor":6,"scoreAgainst":1,"scorers":[{"cognome":"Brettoni","gol":1},{"cognome":"Mocchi","gol":1},{"cognome":"Scaramozza","gol":1},{"cognome":"Molè","gol":2},{"cognome":"Pistolesi","gol":1}]},
+    {"giornata":"Semifinale Supercoppa","opponent":"Badia di Cantignano Logimec","date":"2025-05-24","time":"17:00","scoreFor":0,"scoreAgainst":1,"scorers":[],"note":"Nozzano"}
+  ]
+}

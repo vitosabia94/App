@@ -1,0 +1,33 @@
+{
+  "team": "calcio",
+  "stagione": "2023/24",
+  "partite": [
+    {"giornata":"1^Giornata",  "opponent":"Amatori M.D.A Nuova Carburanti", "date":"2023-10-02","time":"21:00","scoreFor":2,"scoreAgainst":2,"scorers":[{"cognome":"Mocchi","gol":1},{"cognome":"Malfetti","gol":1}]},
+    {"giornata":"2^Giornata",  "opponent":"Lucca Stream",                   "date":"2023-10-07","time":"13:30","scoreFor":8,"scoreAgainst":0,"scorers":[{"cognome":"Molè","gol":3},{"cognome":"Inghirami","gol":2},{"cognome":"Manfredonia","gol":1},{"cognome":"Mocchi","gol":1},{"cognome":"Avancini","gol":1}],"note":"Non omologata"},
+    {"giornata":"3^Giornata",  "opponent":"Dynamo Lucca Ol.Mi Service",     "date":"2023-10-16","time":"21:00","scoreFor":1,"scoreAgainst":1,"scorers":[{"cognome":"Mocchi","gol":1}]},
+    {"giornata":"4^Giornata",  "opponent":"Circolo La Scepre",              "date":"2023-10-23","time":"21:00","scoreFor":3,"scoreAgainst":0,"scorers":[{"cognome":"Risi","gol":1},{"cognome":"Manfredonia","gol":1},{"cognome":"Mara","gol":1}]},
+    {"giornata":"6^Giornata",  "opponent":"F&C Lucca Manomeccanica",        "date":"2023-11-13","time":"21:00","scoreFor":4,"scoreAgainst":0,"scorers":[{"cognome":"Mocchi","gol":2},{"cognome":"Villani","gol":1},{"cognome":"Dell'Anna","gol":1}]},
+    {"giornata":"7^Giornata",  "opponent":"Real Vagli 2013",                "date":"2023-11-19","time":"10:30","scoreFor":3,"scoreAgainst":2,"scorers":[{"cognome":"Mocchi","gol":1},{"cognome":"Molè","gol":1},{"cognome":"De Clemente","gol":1}]},
+    {"giornata":"8^Giornata",  "opponent":"Gello 2004",                     "date":"2023-11-27","time":"21:00","scoreFor":1,"scoreAgainst":1,"scorers":[{"cognome":"Molè","gol":1}]},
+    {"giornata":"9^Giornata",  "opponent":"Gatti Matti Pariana",            "date":"2023-12-02","time":"15:00","scoreFor":3,"scoreAgainst":3,"scorers":[{"cognome":"Malfetti","gol":1},{"cognome":"Spinelli","gol":1},{"cognome":"Villani","gol":1}]},
+    {"giornata":"10^Giornata", "opponent":"Aquila Nozzano 1982",            "date":"2023-12-10","time":"10:30","scoreFor":4,"scoreAgainst":0,"scorers":[{"cognome":"Molè","gol":1},{"cognome":"Spinelli","gol":1},{"cognome":"Mocchi","gol":1},{"cognome":"Gueye","gol":1}]},
+    {"giornata":"11^Giornata", "opponent":"Garzella",                       "date":"2023-12-18","time":"21:00","scoreFor":3,"scoreAgainst":3,"scorers":[{"cognome":"Molè","gol":1},{"cognome":"Mocchi","gol":1},{"cognome":"Spinelli","gol":1}]},
+    {"giornata":"12^Giornata", "opponent":"Stella 2012 Caffè Puccini",      "date":"2024-01-15","time":"21:00","scoreFor":1,"scoreAgainst":1,"scorers":[{"cognome":"Molè","gol":1}]},
+    {"giornata":"13^Giornata", "opponent":"Gello 2004",                     "date":"2024-01-29","time":"21:00","scoreFor":0,"scoreAgainst":1,"scorers":[]},
+    {"giornata":"14^Giornata", "opponent":"Stella 2012 Caffè Puccini",      "date":"2024-02-04","time":"10:30","scoreFor":2,"scoreAgainst":2,"scorers":[{"cognome":"Mocchi","gol":1},{"cognome":"Gionfriddo","gol":1}]},
+    {"giornata":"17^Giornata", "opponent":"Circolo La Scepre",              "date":"2024-02-11","time":"21:00","scoreFor":1,"scoreAgainst":2,"scorers":[{"cognome":"Villani","gol":1}]},
+    {"giornata":"15^Giornata", "opponent":"Real Vagli 2013",                "date":"2024-02-17","time":"15:00","scoreFor":2,"scoreAgainst":0,"scorers":[{"cognome":"Perri","gol":1},{"cognome":"Rossini","gol":1}]},
+    {"giornata":"16^Giornata", "opponent":"F&C Lucca Manomeccanica",        "date":"2024-02-25","time":"10:30","scoreFor":0,"scoreAgainst":0,"scorers":[]},
+    {"giornata":"5^Giornata",  "opponent":"Partizan Borgo a Mozzano",       "date":"2024-03-02","time":"16:00","scoreFor":3,"scoreAgainst":0,"scorers":[{"cognome":"Mocchi","gol":2},{"cognome":"Molè","gol":1}],"note":"Recupero"},
+    {"giornata":"18^Giornata", "opponent":"Gatti Matti Pariana",            "date":"2024-03-19","time":"21:00","scoreFor":1,"scoreAgainst":0,"scorers":[{"cognome":"Spinelli","gol":1}]},
+    {"giornata":"19^Giornata", "opponent":"Partizan Borgo a Mozzano",       "date":"2024-03-24","time":"15:00","scoreFor":1,"scoreAgainst":1,"scorers":[{"cognome":"Perri","gol":1}]},
+    {"giornata":"20^Giornata", "opponent":"Aquila Nozzano 1982",            "date":"2024-04-14","time":"10:30","scoreFor":2,"scoreAgainst":0,"scorers":[{"cognome":"Molè","gol":1},{"cognome":"Capocasale","gol":1}]},
+    {"giornata":"21^Giornata", "opponent":"Amatori M.D.A Nuova Carburanti", "date":"2024-04-22","time":"21:00","scoreFor":1,"scoreAgainst":2,"scorers":[{"cognome":"Molè","gol":1}]},
+    {"giornata":"22^Giornata", "opponent":"Garzella",                       "date":"2024-04-29","time":"21:00","scoreFor":2,"scoreAgainst":1,"scorers":[{"cognome":"Molè","gol":1},{"cognome":"Mocchi","gol":1}]},
+    {"giornata":"Playoff 1°T", "opponent":"Real Vagli 2013",                "date":"2024-05-06","time":"21:00","scoreFor":1,"scoreAgainst":0,"scorers":[{"cognome":"Spinelli","gol":1}]},
+    {"giornata":"Playoff 1°T", "opponent":"Real Vagli 2013",                "date":"2024-05-13","time":"21:00","scoreFor":8,"scoreAgainst":0,"scorers":[{"cognome":"Spinelli","gol":1},{"cognome":"Mocchi","gol":3},{"cognome":"Scaramozza","gol":1},{"cognome":"Molè","gol":1},{"cognome":"Capocasale","gol":1},{"cognome":"Manfredonia","gol":1}]},
+    {"giornata":"Playoff 2°T", "opponent":"Gatti Matti Pariana",            "date":"2024-05-18","time":"16:00","scoreFor":1,"scoreAgainst":0,"scorers":[{"cognome":"Perri","gol":1}]},
+    {"giornata":"Playoff 2°T", "opponent":"Gatti Matti Pariana",            "date":"2024-05-27","time":"21:00","scoreFor":0,"scoreAgainst":0,"scorers":[]},
+    {"giornata":"Finale Playoff","opponent":"Stella 2012 Caffè Puccini",    "date":"2024-06-15","time":"16:30","scoreFor":3,"scoreAgainst":4,"scorers":[],"note":"3-4 DCR"}
+  ]
+}

@@ -246,6 +246,8 @@
     <div class="toolbar">
       <button class="btn admin-only" onclick="openEvent()">+ Nuovo evento</button>
       <button class="btn ghost admin-only" onclick="openFields()">⚙️ Gestione campi</button>
+      <button class="btn ghost sm admin-only" onclick="document.getElementById('importPartiteFile').click()">⬆️ Importa partite</button>
+      <input type="file" id="importPartiteFile" accept=".json,*/*" style="display:none" onchange="importPartite(event)">
       <div class="grow"></div>
       <div class="seg" id="calViewSeg">
         <input type="radio" name="calview" id="cv-lista" value="lista" checked onchange="renderCalendario()"><label for="cv-lista">📋 Lista</label>
@@ -1136,6 +1138,46 @@ function openFields(){
 function addField(){ db.fields.push("Nuovo campo"); openFields(); }
 function rmField(i){ db.fields.splice(i,1); openFields(); }
 function saveFields(){ db.fields=[...document.querySelectorAll(".fEdit")].map(x=>x.value.trim()).filter(Boolean); if(!db.fields.length)db.fields=["Campo Comunale"]; save(); closeModal(); renderAll(); }
+
+/* ============ IMPORT PARTITE ============ */
+function importPartite(ev){
+  if(!isAdmin) return;
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onerror=()=>alert("Errore nella lettura del file.");
+  r.onload=async()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!d.partite||!Array.isArray(d.partite)) throw new Error("Formato non valido: manca 'partite'");
+      const team=d.team||"calcio";
+      const stagione=d.stagione||"?";
+      let added=0, unknownScorers=new Set();
+      d.partite.forEach(p=>{
+        // evita duplicati (stessa data+avversario+squadra)
+        const dup=db.events.find(e=>e.team===team&&e.date===p.date&&(e.opponent||"").toLowerCase()===(p.opponent||"").toLowerCase());
+        if(dup) return;
+        // risolvi marcatori: cerca giocatore per cognome (primo token del nome)
+        const scorers=[];
+        (p.scorers||[]).forEach(s=>{
+          const cog=(s.cognome||"").toLowerCase().trim();
+          const found=db.players.find(pl=>{
+            const firstName=pl.name.toLowerCase().split(" ")[0];
+            return firstName===cog||pl.name.toLowerCase().includes(cog);
+          });
+          if(found) scorers.push({playerId:found.id,goals:s.gol||1});
+          else unknownScorers.add(s.cognome);
+        });
+        db.events.push({id:uid(),kind:"partita",team,date:p.date,time:p.time||"21:00",field:"",opponent:p.opponent||"",note:(p.giornata?(p.giornata+(p.note?" · "+p.note:"")):(p.note||"")),scoreFor:p.scoreFor,scoreAgainst:p.scoreAgainst,scorers});
+        added++;
+      });
+      await save(); renderCalendario();
+      let msg=`Stagione ${stagione}: importate ${added} partite.`;
+      if(unknownScorers.size) msg+=`\n\nMarcatori non trovati in rosa (gol non assegnati):\n${[...unknownScorers].join(", ")}\n\nAggiungi questi giocatori nella scheda Giocatori e ripeti l'import.`;
+      alert(msg);
+    }catch(e){ alert("Errore: "+(e.message||"File non valido.")); }
+  };
+  r.readAsText(f); ev.target.value="";
+}
 
 /* ============ BACKUP ============ */
 function exportJSON(){ dl(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),"gestione-istria-backup-"+todayISO()+".json"); }

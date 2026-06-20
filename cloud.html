@@ -1093,7 +1093,7 @@ function openEvent(id){
     <div class="seg"><input type="radio" name="ekind" id="ek-a" class="v-team" value="allenamento" ${e.kind==="allenamento"?"checked":""} onchange="updateEventForm()"><label for="ek-a">🏃 Allenamento</label>
     <input type="radio" name="ekind" id="ek-p" class="v-team" value="partita" ${e.kind==="partita"?"checked":""} onchange="updateEventForm()"><label for="ek-p">🏆 Partita</label></div><div style="height:12px"></div>
     <label class="field">Squadra<select id="eTeam" onchange="updateEventForm()"><option value="calcio" ${e.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${e.team==="volley"?"selected":""}>🐦‍⬛ Istria Volley</option></select></label>
-    <div class="row2"><label class="field">Data<input type="date" id="eDate" value="${e.date}"></label><label class="field">Ora<input type="time" id="eTime" value="${e.time}"></label></div>
+    <div class="row2"><label class="field">Data<input type="date" id="eDate" value="${e.date}" onchange="updateEventForm()"></label><label class="field">Ora<input type="time" id="eTime" value="${e.time}"></label></div>
     <label class="field">Campo / Luogo<select id="eField">${fo}</select></label>
     <label class="field" id="oppWrap" style="${e.kind==="partita"?"":"display:none"}">Avversario<input type="text" id="eOpp" value="${esc(e.opponent)}"></label>
     <div id="resultBox"></div>
@@ -1117,7 +1117,9 @@ function updateEventForm(){
       <label class="field">${unit} avversario<input type="number" id="eScoreAgainst" min="0" value="${sa}"></label>
     </div>`;
   if(team==="calcio"){
-    const roster=db.players.filter(p=>p.team==="calcio").sort((a,b)=>a.name.localeCompare(b.name));
+    const evDate=document.getElementById("eDate")?.value||todayISO();
+    const evSeason=inSeason(evDate,calSeasonStart)?calSeasonStart:(()=>{const[y,m]=evDate.split("-").map(Number);return m>=9?y:y-1;})();
+    const roster=db.players.filter(p=>p.team==="calcio"&&p.attivo!==false&&(p.joinSeason||0)<=evSeason&&(p.seasonActive||{})[evSeason]!==false).sort((a,b)=>a.name.localeCompare(b.name));
     const sc=(e.scorers||[]).reduce((o,s)=>{ o[s.playerId]=s.goals; return o; },{});
     html+=`<div style="font-weight:700;margin:6px 0 6px">⚽ Marcatori</div>`;
     html+= roster.length? roster.map(p=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">

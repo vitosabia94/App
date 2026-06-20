@@ -143,6 +143,15 @@
   .trend-dot{display:inline-block;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:900;line-height:22px;text-align:center;color:#fff;margin:1px}
   .trend-dot.V{background:var(--in)}.trend-dot.X{background:var(--muted)}.trend-dot.P{background:var(--out)}
   @media print{header,nav,.toolbar,.btn,footer,.lockbtn{display:none!important}.view{display:block!important}body{background:#fff}.card{box-shadow:none;break-inside:avoid}#lock{display:none!important}}
+  /* toast */
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--black);color:#fff;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;opacity:0;transition:all .3s;z-index:300;pointer-events:none;border-left:3px solid var(--yellow)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* mobile quote grid */
+  @media(max-width:600px){
+    .pgrid th,.pgrid td{padding:1px 1px}
+    .mcell{width:22px;height:22px;line-height:22px;font-size:10px}
+    .pgrid td.name,.pgrid th.name{max-width:80px;font-size:11px}
+  }
 </style>
 </head>
 <body>
@@ -179,15 +188,19 @@
   <button data-view="movimenti">Movimenti</button>
   <button data-view="giocatori">Giocatori &amp; Quote</button>
   <button data-view="anagrafica">Anagrafica</button>
-  <button data-view="certificati">Certificati</button>
+  <button data-view="certificati" id="certNavBtn">Certificati</button>
   <button data-view="calendario">Calendario</button>
-  <button data-view="impostazioni">Backup</button>
+  <button data-view="impostazioni" style="margin-left:auto">⚙</button>
 </nav>
 
 <main>
   <!-- DASHBOARD -->
   <section class="view active" id="view-dashboard">
     <div class="grid grid-3" id="stats"></div>
+    <div class="card" id="quickStats" style="margin-bottom:16px">
+      <h2>In evidenza</h2>
+      <div style="display:flex;gap:12px;flex-wrap:wrap" id="quickStatsInner"></div>
+    </div>
     <div class="card">
       <h2>Andamento mensile (ultimi 6 mesi)</h2>
       <canvas id="chartMonthly" height="200"></canvas>
@@ -280,12 +293,12 @@
   <section class="view" id="view-calendario">
     <div class="toolbar">
       <button class="btn admin-only" onclick="openEvent()">+ Nuovo evento</button>
-      <button class="btn ghost admin-only" onclick="openFields()">⚙️ Gestione campi</button>
+      <button class="btn ghost admin-only" onclick="openFields()">Gestione campi</button>
       <div class="grow"></div>
       <div class="seg" id="calViewSeg">
-        <input type="radio" name="calview" id="cv-lista" value="lista" onchange="renderCalendario()"><label for="cv-lista">📋 Lista</label>
-        <input type="radio" name="calview" id="cv-mese" value="mese" checked onchange="renderCalendario()"><label for="cv-mese">📅 Mese</label>
-        <input type="radio" name="calview" id="cv-risultati" value="risultati" onchange="renderCalendario()"><label for="cv-risultati">🏆 Risultati</label>
+        <input type="radio" name="calview" id="cv-lista" value="lista" onchange="renderCalendario()"><label for="cv-lista">Lista</label>
+        <input type="radio" name="calview" id="cv-mese" value="mese" checked onchange="renderCalendario()"><label for="cv-mese">Mese</label>
+        <input type="radio" name="calview" id="cv-risultati" value="risultati" onchange="renderCalendario()"><label for="cv-risultati">Risultati</label>
       </div>
       <select id="filterEvent" style="width:auto" onchange="renderCalendario()">
         <option value="all">Tutti</option><option value="allenamento">Allenamenti</option><option value="partita">Partite</option>
@@ -312,18 +325,19 @@
       <h2>Backup &amp; Esportazione</h2>
       <p class="hint">I dati sono salvati nel database online condiviso. Conviene comunque esportare un backup ogni tanto come copia di sicurezza.</p>
       <div class="toolbar">
-        <button class="btn green" onclick="exportJSON()">⬇️ Esporta backup (JSON)</button>
-        <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importa backup</button>
+        <button class="btn green" onclick="exportJSON()">Esporta backup (JSON)</button>
+        <button class="btn ghost" onclick="document.getElementById('importFile').click()">Importa backup</button>
         <input type="file" id="importFile" accept=".json,application/json,*/*" style="display:none" onchange="importJSON(event)">
       </div>
       <div class="toolbar">
-        <button class="btn ghost" onclick="exportCSV()">📄 Esporta movimenti (CSV)</button>
-        <button class="btn ghost" onclick="window.print()">🖨️ Stampa riepilogo / PDF</button>
+        <button class="btn ghost" onclick="exportCSV()">Esporta movimenti (CSV)</button>
+        <button class="btn ghost" onclick="window.print()">Stampa riepilogo / PDF</button>
       </div>
     </div>
   </section>
 </main>
 <footer>Casa Istria · dati condivisi online (Supabase)</footer>
+<div id="toast"></div>
 </div>
 
 <div class="overlay" id="overlay"><div class="modal" id="modalContent"></div></div>
@@ -455,7 +469,9 @@ async function save(){
   myLastSave=Date.now(); db.updatedAt=myLastSave;
   const {error}=await sb.from("club_data").update({data:db,updated_at:new Date().toISOString()}).eq("id",1);
   if(error){ console.error(error); alert("Attenzione: salvataggio non riuscito. Controlla la connessione.\n"+error.message); }
+  else showToast("Salvato ✓");
 }
+function showToast(msg,ms=2000){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),ms); }
 function migrate(d){
   d=d||defaultDb();
   d.moves=d.moves||[]; d.players=d.players||[]; d.events=d.events||[]; d.fields=d.fields||["Campo Comunale"];
@@ -526,6 +542,7 @@ function renderDashboard(){
     <div class="stat total"><div class="label">Saldo cassa unica</div><div class="value">${eur(a.bal)}</div><div class="meta">Entrate ${eur(a.inc)} · Uscite ${eur(a.out)}</div></div>
     <div class="stat calcio"><div class="label">Istria Calcio</div><div class="value">${eur(c.bal)}</div><div class="meta">Entrate ${eur(c.inc)} · Uscite ${eur(c.out)}</div></div>
     <div class="stat volley"><div class="label">Istria Volley</div><div class="value">${eur(v.bal)}</div><div class="meta">Entrate ${eur(v.inc)} · Uscite ${eur(v.out)}</div></div>`;
+  renderQuickStats();
   drawMonthly();
   renderClassBreak();
   drawCategoryChart("chartOut","legendOut","uscita",["#d23b3b","#e8743b","#e0a82e","#b8503f","#8f3a4f","#6b4b8a","#c2453d"]);
@@ -539,6 +556,25 @@ function renderClassBreak(){
   document.getElementById("classBreak").innerHTML=`<table><thead><tr><th>Tipologia</th><th class="num">Entrate</th><th class="num">Uscite</th><th class="num">Saldo</th></tr></thead><tbody>${
     Object.keys(CLASSI).map(k=>`<tr><td><span class="pill ${k}">${CLASSI[k]}</span></td><td class="num amt-in">${eur(agg[k].inc)}</td><td class="num amt-out">${eur(agg[k].out)}</td><td class="num">${eur(agg[k].inc-agg[k].out)}</td></tr>`).join("")
   }</tbody></table>`;
+}
+function renderQuickStats(){
+  const el=document.getElementById("quickStatsInner"); if(!el) return;
+  const curSeason=defaultSeasonStart();
+  const isInRosa=p=>p.attivo!==false&&(p.seasonActive||{})[curSeason]!==false;
+  // cert alerts
+  const certCount=db.players.filter(p=>p.attivo!==false&&(p.ruolo||"giocatore")!=="dirigente"&&(certStatus(p.certScadenza).key==="scaduto"||certStatus(p.certScadenza).key==="scadenza")).length;
+  // unpaid current month
+  const curMonthKey=new Date().toISOString().slice(0,7);
+  const unpaidCount=db.players.filter(p=>(p.ruolo||"giocatore")==="giocatore"&&isInRosa(p)&&!p.payments[curMonthKey]).length;
+  // next event
+  const today=todayISO();
+  const nextEv=db.events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date))[0];
+  const nextEvLabel=nextEv?(fmtDate(nextEv.date)+(nextEv.kind==="partita"?" vs "+esc(nextEv.opponent||"?"):" Allenamento")):"Nessuno";
+  const stat=(value,label,color)=>`<div style="flex:1;min-width:120px;background:var(--bg);border-radius:10px;padding:12px;text-align:center"><div style="font-size:24px;font-weight:800;color:${color}">${value}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">${label}</div></div>`;
+  el.innerHTML=
+    stat(certCount,"Cert in allerta",certCount>0?"var(--out)":"var(--in)")+
+    stat(unpaidCount,"Senza quota questo mese",unpaidCount>0?"var(--out)":"var(--in)")+
+    stat(nextEvLabel,"Prossimo evento","var(--ink)");
 }
 function drawMonthly(){
   const cv=document.getElementById("chartMonthly"); if(!cv||!cv.clientWidth)return; const ctx=cv.getContext("2d");
@@ -711,7 +747,7 @@ function renderPlayers(){
     const fuoriRosa=p.seasonActive&&p.seasonActive[seasonStart]===false;
     const inactiveBadge=p.attivo===false?` <span class="pill" style="background:#ccc;color:#555">Ex-giocatore</span>`:
       fuoriRosa?` <span class="pill" style="background:#ffe0b2;color:#7a4300">Fuori rosa</span>`:"";
-    const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a><a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy)" title="Storico">📋</a>`:"";
+    const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏</a><a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy);font-size:12px;margin-left:2px" title="Storico">storico</a>`:"";
     rows+=`<tr style="${p.attivo===false||fuoriRosa?'opacity:0.5':''}"><td class="name" title="${esc(p.name)}">${esc(p.name)}${inactiveBadge}${pencil}</td>${iscCell}${cells}</tr>`;
   });
   const toggleBtn=isAdmin&&outCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi non in rosa":"Mostra non in rosa ("+outCount+")"}</button>`:"";
@@ -816,7 +852,7 @@ function openPlayer(id){
       <span>Fa ancora parte del club (deseleziona solo se ha lasciato definitivamente)</span>
     </label>
     <p class="hint">Per escludere un giocatore da una singola stagione senza rimuoverlo, usa il link "− rosa" nella griglia quote. Deseleziona "Fa ancora parte del club" solo se ha lasciato il club per sempre: sparirà dalle stagioni future ma resterà nello storico.</p>
-    <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button><button class="btn ghost" onclick="openPlayerHistory('${id}')">📋 Storico</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
+    <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button><button class="btn ghost" onclick="openPlayerHistory('${id}')">Storico</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
 }
 function applyGenderDefaults(){}
 function savePlayer(){
@@ -845,7 +881,7 @@ function openPlayerHistory(id){
   const goalsHeader=p.team==="calcio"?`<th>Gol</th>`:"";
   const totalGoals=p.team==="calcio"?playerGoals(p.id):null;
   const goalSummary=p.team==="calcio"?`<p style="margin-top:8px">Totale gol in carriera: <b>${totalGoals} ⚽</b></p>`:"";
-  showModal(`<h2>📋 Storico — ${esc(p.name)}</h2>
+  showModal(`<h2>Storico — ${esc(p.name)}</h2>
     <p style="margin-bottom:12px"><span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].name}</span> · ${p.gender==="F"?"Donna":"Uomo"} · <span style="color:${p.attivo!==false?"var(--in)":"#aaa"}">${p.attivo!==false?"Attivo":"Inattivo"}</span></p>
     <table style="width:100%;border-collapse:collapse">
       <thead><tr style="border-bottom:2px solid #eee"><th style="text-align:left">Stagione</th><th>Pagato</th><th>Mesi</th>${goalsHeader}</tr></thead>
@@ -889,8 +925,8 @@ function renderAnagrafica(){
       const numCells=hasCalcio
         ?`<td style="text-align:center">${p.team==="calcio"&&!isDirigente?numInput("numCasa"):""}</td><td style="text-align:center">${p.team==="calcio"&&!isDirigente?numInput("numTrasferta"):""}</td>`
         :"";
-      return `<tr>
-        <td style="font-weight:600">${esc(p.name)}</td>
+      return `<tr${isDirigente?' style="background:#fafaf8"':''}>
+        <td style="font-weight:600">${esc(p.name)}${isDirigente?'<span class="pill standard" style="font-size:10px;margin-left:4px">Dir.</span>':''}</td>
         <td><span class="team-badge ${team.cls}">${team.name.toUpperCase()}</span></td>
         <td>${tessCell}</td>
         <td style="font-family:monospace;font-size:13px">${certCell}</td>
@@ -913,6 +949,12 @@ function setNumMaglia(pid,field,val){
 }
 
 /* ============ CERTIFICATI MEDICI ============ */
+function updateCertBadge(){
+  const btn=document.getElementById("certNavBtn"); if(!btn) return;
+  const count=db.players.filter(p=>p.attivo!==false&&(p.ruolo||"giocatore")!=="dirigente"&&(certStatus(p.certScadenza).key==="scaduto"||certStatus(p.certScadenza).key==="scadenza")).length;
+  if(count>0) btn.innerHTML=`Certificati <span style="background:var(--out);color:#fff;border-radius:999px;font-size:11px;font-weight:800;padding:1px 6px;margin-left:4px">${count}</span>`;
+  else btn.textContent="Certificati";
+}
 function certStatus(dateStr){
   if(!dateStr) return {key:"mancante",label:"Mancante",cls:"none",days:null};
   const today=new Date(todayISO()+"T00:00"), exp=new Date(dateStr+"T00:00");
@@ -948,6 +990,7 @@ function renderCerts(){
       </tr>`;
     }).join("")
   }</tbody></table></div>`;
+  updateCertBadge();
 }
 function certDatePicker(pid, val){
   const [y,m,d]= val ? val.split("-") : ["","",""];
@@ -1061,9 +1104,9 @@ function renderCalMonth(){
     html+=`<div class="cal-day${isToday?" today":""}" ${dayClick} style="${isAdmin?"cursor:pointer":""}">`;
     html+=`<div class="cal-day-num">${d}</div>`;
     (evByDay[d]||[]).sort((a,b)=>a.time.localeCompare(b.time)).forEach(e=>{
-      const icon=e.kind==="partita"?"🏆":"🏃";
+      const icon=e.kind==="partita"?"P":"A";
       const label=e.kind==="partita"?("vs "+esc(e.opponent||"?")):"Allenamento";
-      const fieldShort=e.field?` · 📍${esc(e.field)}`:"";
+      const fieldShort=e.field?` · ${esc(e.field)}`:"";
       const click=isAdmin?`onclick="openEvent('${e.id}')"` :"";
       html+=`<div class="cal-ev ${e.team}${e.kind==="partita"?" partita":""}" ${click} title="${e.time} · ${label}${fieldShort}">${icon} ${e.time||""} ${label}${fieldShort}</div>`;
     });
@@ -1154,7 +1197,7 @@ function renderRisultati(){
     </div>`;
 }
 function evHTML(e){
-  const d=new Date(e.date+"T00:00"),icon=e.kind==="partita"?"🏆":"🏃";
+  const d=new Date(e.date+"T00:00"),icon=e.kind==="partita"?"Partita":"Allenamento";
   let result="";
   if(e.kind==="partita" && e.scoreFor!=null && e.scoreAgainst!=null){
     const w=e.scoreFor>e.scoreAgainst, l=e.scoreFor<e.scoreAgainst;
@@ -1164,12 +1207,12 @@ function evHTML(e){
   let scorers="";
   if(e.kind==="partita" && e.scorers && e.scorers.length){
     const names=e.scorers.map(s=>{ const p=db.players.find(x=>x.id===s.playerId); return (p?esc(p.name):"?")+(s.goals>1?" ("+s.goals+")":""); });
-    scorers=`<div class="hint">⚽ ${names.join(", ")}</div>`;
+    scorers=`<div class="hint">Gol: ${names.join(", ")}</div>`;
   }
   const clickable=isAdmin?`cursor:pointer" onclick="openEvent('${e.id}')"`:`"`;
   return `<div style="border-left:4px solid var(--${TEAMS[e.team].cls});padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;display:flex;gap:12px;align-items:center;${clickable}>
     <div style="text-align:center;min-width:46px"><div style="font-size:20px;font-weight:800">${d.getDate()}</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">${MONTHS[d.getMonth()]}</div></div>
-    <div style="flex:1"><div style="font-weight:700">${icon} ${e.kind==="partita"?("vs "+esc(e.opponent||"—")):"Allenamento"} <span class="pill ${TEAMS[e.team].cls}">${TEAMS[e.team].emoji}</span>${result}</div>
+    <div style="flex:1"><div style="font-weight:700">${icon}${e.kind==="partita"?(" vs "+esc(e.opponent||"—")):""} <span class="pill ${TEAMS[e.team].cls}">${TEAMS[e.team].emoji}</span>${result}</div>
     <div class="hint">${e.time||"--:--"} · 📍 ${esc(e.field||"—")}${e.note?" · "+esc(e.note):""}</div>${scorers}</div></div>`;
 }
 function openEvent(id,preDate){
@@ -1178,8 +1221,8 @@ function openEvent(id,preDate){
   const e=editingEvent||{kind:"allenamento",team:scope==="volley"?"volley":"calcio",date:preDate||todayISO(),time:"19:00",field:db.fields[0]||"",opponent:"",note:""};
   const fo=db.fields.map(f=>`<option ${e.field===f?"selected":""}>${esc(f)}</option>`).join("");
   showModal(`<h2>${id?"Modifica":"Nuovo"} evento</h2>
-    <div class="seg"><input type="radio" name="ekind" id="ek-a" class="v-team" value="allenamento" ${e.kind==="allenamento"?"checked":""} onchange="updateEventForm()"><label for="ek-a">🏃 Allenamento</label>
-    <input type="radio" name="ekind" id="ek-p" class="v-team" value="partita" ${e.kind==="partita"?"checked":""} onchange="updateEventForm()"><label for="ek-p">🏆 Partita</label></div><div style="height:12px"></div>
+    <div class="seg"><input type="radio" name="ekind" id="ek-a" class="v-team" value="allenamento" ${e.kind==="allenamento"?"checked":""} onchange="updateEventForm()"><label for="ek-a">Allenamento</label>
+    <input type="radio" name="ekind" id="ek-p" class="v-team" value="partita" ${e.kind==="partita"?"checked":""} onchange="updateEventForm()"><label for="ek-p">Partita</label></div><div style="height:12px"></div>
     <label class="field">Squadra<select id="eTeam" onchange="updateEventForm()"><option value="calcio" ${e.team==="calcio"?"selected":""}>Istria Calcio</option><option value="volley" ${e.team==="volley"?"selected":""}>Istria Volley</option></select></label>
     <div class="row2"><label class="field">Data<input type="date" id="eDate" value="${e.date}" onchange="updateEventForm()"></label><label class="field">Ora<input type="time" id="eTime" value="${e.time}"></label></div>
     <label class="field">Campo / Luogo<select id="eField">${fo}</select></label>
@@ -1416,6 +1459,7 @@ function loadDemo(){
 function renderAll(){
   [renderDashboard,renderMoves,renderPlayers,renderAnagrafica,renderCerts,renderCalendario]
     .forEach(fn=>{ try{ fn(); }catch(e){ console.error(fn.name,e); } });
+  updateCertBadge();
 }
 window.addEventListener("resize",()=>{ if(document.getElementById("view-dashboard").classList.contains("active")) renderDashboard(); });
 initAuth();

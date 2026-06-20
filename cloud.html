@@ -105,9 +105,9 @@
   /* monthly grid */
   .pgrid{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:14px}
   .pgrid table{min-width:680px}
-  .pgrid th,.pgrid td{text-align:center;padding:7px 6px;font-size:13px}
-  .pgrid td.name,.pgrid th.name{text-align:left;position:sticky;left:0;background:#fff;font-weight:700;white-space:nowrap;min-width:140px}
-  .mcell{cursor:pointer;border-radius:8px;width:34px;height:30px;line-height:30px;margin:auto;font-weight:700;font-size:12px;user-select:none}
+  .pgrid th,.pgrid td{text-align:center;padding:5px 2px;font-size:12px}
+  .pgrid td.name,.pgrid th.name{text-align:left;position:sticky;left:0;background:#fff;font-weight:700;white-space:nowrap;min-width:100px}
+  .mcell{cursor:pointer;border-radius:6px;width:26px;height:26px;line-height:26px;margin:auto;font-weight:700;font-size:11px;user-select:none}
   .mcell.paid{background:#e3f6ec;color:var(--in);font-size:11px}
   .mcell.unpaid{background:#f4f5f7;color:#c2cad2}
   .mcell.partial{background:#fff5e0;color:#b9852b;font-size:11px}
@@ -677,7 +677,7 @@ function renderPlayers(){
     rows+=`<tr style="${p.attivo===false||fuoriRosa?'opacity:0.5':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>${inactiveBadge}${pencil}</td>${iscCell}${cells}</tr>`;
   });
   const toggleBtn=isAdmin&&outCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi non in rosa":"Mostra non in rosa ("+outCount+")"}</button>`:"";
-  el.innerHTML=`<div style="margin-bottom:6px">${toggleBtn}</div><div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  el.innerHTML=`<div style="margin-bottom:6px">${toggleBtn}</div><div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th title="${m.label} '${String(m.year).slice(2)}">${m.label.slice(0,2)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   document.getElementById("quotaSummary").innerHTML="";
 }
 function toggleMonth(pid,key){

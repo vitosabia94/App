@@ -460,6 +460,7 @@ function migrate(d){
     if(p.certScadenzaNote==null) p.certScadenzaNote="";
     if(p.email==null) p.email="";
     if(p.tesserino==null) p.tesserino="";
+    if(!p.ruolo) p.ruolo="giocatore";
     if(p.numCasa==null) p.numCasa="";
     if(p.numTrasferta==null) p.numTrasferta="";
     if(p.attivo==null) p.attivo=true;
@@ -660,7 +661,7 @@ function renderPlayers(){
   fmSel.innerHTML=`<option value="">Tutti i mesi</option>`+months.map(m=>`<option value="${m.key}" ${fmVal===m.key?"selected":""}>${m.label} '${String(m.year).slice(2)}</option>`).join("");
   const filterMonth=fmSel.value;
   const filterStatus=document.getElementById("filterPayStatus").value;
-  let list=db.players.filter(p=>inScope(p.team)&&(p.joinSeason||0)<=seasonStart).sort((a,b)=>a.name.localeCompare(b.name));
+  let list=db.players.filter(p=>inScope(p.team)&&(p.ruolo||"giocatore")==="giocatore"&&(p.joinSeason||0)<=seasonStart).sort((a,b)=>a.name.localeCompare(b.name));
   // "in rosa" = attivo nel club E non escluso da questa stagione
   const isInRosa=p=>p.attivo!==false&&(p.seasonActive||{})[seasonStart]!==false;
   const outCount=list.filter(p=>!isInRosa(p)).length;
@@ -795,7 +796,10 @@ function openPlayer(id){
   const joinSeasonOpts=Array.from({length:12},(_,i)=>curSeason-8+i).map(y=>`<option value="${y}" ${(p.joinSeason||curSeason)===y?"selected":""}>${seasonLabel(y)}</option>`).join("");
   showModal(`<h2>${id?"Modifica":"Nuovo"} giocatore</h2>
     <label class="field">Nome e cognome<input type="text" id="pName" value="${esc(p.name)}" placeholder="es. Mario Rossi"></label>
-    <label class="field">Squadra<select id="pTeam"><option value="calcio" ${p.team==="calcio"?"selected":""}>Istria Calcio</option><option value="volley" ${p.team==="volley"?"selected":""}>Istria Volley</option></select></label>
+    <div class="row2">
+      <label class="field">Squadra<select id="pTeam"><option value="calcio" ${p.team==="calcio"?"selected":""}>Istria Calcio</option><option value="volley" ${p.team==="volley"?"selected":""}>Istria Volley</option></select></label>
+      <label class="field">Ruolo<select id="pRuolo"><option value="giocatore" ${(p.ruolo||"giocatore")==="giocatore"?"selected":""}>Giocatore</option><option value="dirigente" ${p.ruolo==="dirigente"?"selected":""}>Dirigente</option></select></label>
+    </div>
     <label class="field">Stagione di ingresso<select id="pJoinSeason">${joinSeasonOpts}</select></label>
     <label class="field" style="flex-direction:row;align-items:center;gap:10px;cursor:pointer">
       <input type="checkbox" id="pAttivo" ${attivoChk} style="width:18px;height:18px;cursor:pointer">
@@ -809,7 +813,8 @@ function savePlayer(){
   const name=document.getElementById("pName").value.trim();
   if(!name){ alert("Inserisci il nome."); return; }
   const g=(editingPlayer?.gender)||"M";
-  const o={name,team:document.getElementById("pTeam").value,gender:g,quotaMensile:QUOTA_MENSILE[g],quotaIscrizione:QUOTA_ISCRIZIONE[g],attivo:document.getElementById("pAttivo").checked,joinSeason:parseInt(document.getElementById("pJoinSeason").value)||defaultSeasonStart()};
+  const ruolo=document.getElementById("pRuolo").value;
+  const o={name,team:document.getElementById("pTeam").value,gender:g,ruolo,quotaMensile:QUOTA_MENSILE[g],quotaIscrizione:QUOTA_ISCRIZIONE[g],attivo:document.getElementById("pAttivo").checked,joinSeason:parseInt(document.getElementById("pJoinSeason").value)||defaultSeasonStart()};
   if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},iscrizioni:{},...o});
   save(); closeModal(); renderAll();
 }
@@ -852,9 +857,11 @@ function renderAnagrafica(){
     const numCols=hasCalcio?`<th style="text-align:center">N° Casa</th><th style="text-align:center">N° Trasferta</th>`:"";
     const rows=list.map(p=>{
       const team=TEAMS[p.team]||TEAMS["calcio"];
-      const s=certStatus(p.certScadenza||"");
-      const extra=s.days==null?"":(s.days<0?` · scaduto da ${-s.days} gg`:` · tra ${s.days} gg`);
-      const certCell=p.certScadenza?fmtDate(p.certScadenza):"—";
+      const isDirigente=(p.ruolo||"giocatore")==="dirigente";
+      const s=isDirigente?null:certStatus(p.certScadenza||"");
+      const extra=s&&s.days!=null?(s.days<0?` · scaduto da ${-s.days} gg`:` · tra ${s.days} gg`):"";
+      const certCell=isDirigente?`<span style="color:var(--muted);font-size:12px">—</span>`:(p.certScadenza?fmtDate(p.certScadenza):"—");
+      const certStatus_=isDirigente?`<span class="pill standard">Dirigente</span>`:`<span class="pill ${s.cls}">${s.label}</span><span style="font-size:11px;color:var(--muted)">${extra}</span>`;
       const tessCell=isAdmin
         ?`<input type="text" value="${esc(p.tesserino||"")}" placeholder="—" style="width:100px;font-family:monospace;font-size:13px" onchange="setTesserino('${p.id}',this.value)">`
         :`<span style="font-family:monospace;font-size:13px">${esc(p.tesserino||"—")}</span>`;
@@ -862,14 +869,14 @@ function renderAnagrafica(){
         ?`<input type="number" min="1" max="99" value="${p[field]||""}" placeholder="—" style="width:54px;text-align:center;font-weight:700;font-size:14px" onchange="setNumMaglia('${p.id}','${field}',this.value)">`
         :`<span style="font-weight:700">${p[field]||"—"}</span>`;
       const numCells=hasCalcio
-        ?`<td style="text-align:center">${p.team==="calcio"?numInput("numCasa"):""}</td><td style="text-align:center">${p.team==="calcio"?numInput("numTrasferta"):""}</td>`
+        ?`<td style="text-align:center">${p.team==="calcio"&&!isDirigente?numInput("numCasa"):""}</td><td style="text-align:center">${p.team==="calcio"&&!isDirigente?numInput("numTrasferta"):""}</td>`
         :"";
       return `<tr>
         <td style="font-weight:600">${esc(p.name)}</td>
         <td><span class="team-badge ${team.cls}">${team.name.toUpperCase()}</span></td>
         <td>${tessCell}</td>
         <td style="font-family:monospace;font-size:13px">${certCell}</td>
-        <td><span class="pill ${s.cls}">${s.label}</span><span style="font-size:11px;color:var(--muted)">${extra}</span></td>
+        <td>${certStatus_}</td>
         ${numCells}
       </tr>`;
     }).join("");
@@ -898,7 +905,7 @@ function certStatus(dateStr){
 }
 function renderCerts(){
   const active=["scaduto","scadenza","valido","mancante"].filter(k=>document.getElementById("fc-"+k)?.checked);
-  let list=db.players.filter(p=>inScope(p.team)&&p.attivo!==false);
+  let list=db.players.filter(p=>inScope(p.team)&&p.attivo!==false&&(p.ruolo||"giocatore")==="giocatore");
   const counts={scaduto:0,scadenza:0,valido:0,mancante:0};
   list.forEach(p=>counts[certStatus(p.certScadenza).key]++);
   document.getElementById("certSummary").innerHTML=
@@ -1182,7 +1189,7 @@ function updateEventForm(){
   if(team==="calcio"){
     const evDate=document.getElementById("eDate")?.value||todayISO();
     const evSeason=inSeason(evDate,calSeasonStart)?calSeasonStart:(()=>{const[y,m]=evDate.split("-").map(Number);return m>=9?y:y-1;})();
-    const roster=db.players.filter(p=>p.team==="calcio"&&p.attivo!==false&&(p.joinSeason||0)<=evSeason&&(p.seasonActive||{})[evSeason]!==false).sort((a,b)=>a.name.localeCompare(b.name));
+    const roster=db.players.filter(p=>p.team==="calcio"&&p.attivo!==false&&(p.ruolo||"giocatore")==="giocatore"&&(p.joinSeason||0)<=evSeason&&(p.seasonActive||{})[evSeason]!==false).sort((a,b)=>a.name.localeCompare(b.name));
     const sc=(e.scorers||[]).reduce((o,s)=>{ o[s.playerId]=s.goals; return o; },{});
     html+=`<div style="font-weight:700;margin:6px 0 6px">⚽ Marcatori</div>`;
     html+= roster.length? roster.map(p=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">

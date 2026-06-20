@@ -799,10 +799,6 @@ function openPlayer(id){
       <label class="field">Genere<select id="pGender" onchange="applyGenderDefaults()"><option value="M" ${p.gender==="M"?"selected":""}>Uomo</option><option value="F" ${p.gender==="F"?"selected":""}>Donna</option></select></label>
     </div>
     <label class="field">Stagione di ingresso<select id="pJoinSeason">${joinSeasonOpts}</select></label>
-    <div class="row2">
-      <label class="field">Quota mensile (€)<input type="number" id="pQuota" step="0.01" min="0" value="${p.quotaMensile}"></label>
-      <label class="field">Iscrizione (€)<input type="number" id="pIscr" step="0.01" min="0" value="${p.quotaIscrizione}"></label>
-    </div>
     <label class="field" style="flex-direction:row;align-items:center;gap:10px;cursor:pointer">
       <input type="checkbox" id="pAttivo" ${attivoChk} style="width:18px;height:18px;cursor:pointer">
       <span>Fa ancora parte del club (deseleziona solo se ha lasciato definitivamente)</span>
@@ -810,15 +806,12 @@ function openPlayer(id){
     <p class="hint">Per escludere un giocatore da una singola stagione senza rimuoverlo, usa il link "− rosa" nella griglia quote. Deseleziona "Fa ancora parte del club" solo se ha lasciato il club per sempre: sparirà dalle stagioni future ma resterà nello storico.</p>
     <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button><button class="btn ghost" onclick="openPlayerHistory('${id}')">📋 Storico</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
 }
-function applyGenderDefaults(){
-  const g=document.getElementById("pGender").value;
-  document.getElementById("pQuota").value=QUOTA_MENSILE[g];
-  document.getElementById("pIscr").value=QUOTA_ISCRIZIONE[g];
-}
+function applyGenderDefaults(){}
 function savePlayer(){
   const name=document.getElementById("pName").value.trim();
   if(!name){ alert("Inserisci il nome."); return; }
-  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,attivo:document.getElementById("pAttivo").checked,joinSeason:parseInt(document.getElementById("pJoinSeason").value)||defaultSeasonStart()};
+  const g=document.getElementById("pGender").value;
+  const o={name,team:document.getElementById("pTeam").value,gender:g,quotaMensile:QUOTA_MENSILE[g],quotaIscrizione:QUOTA_ISCRIZIONE[g],attivo:document.getElementById("pAttivo").checked,joinSeason:parseInt(document.getElementById("pJoinSeason").value)||defaultSeasonStart()};
   if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},iscrizioni:{},...o});
   save(); closeModal(); renderAll();
 }
@@ -851,35 +844,39 @@ function openPlayerHistory(id){
 
 /* ============ ANAGRAFICA ============ */
 function renderAnagrafica(){
-  const q=(document.getElementById("anagSearch")?.value||"").toLowerCase();
-  let list=db.players.filter(p=>inScope(p.team)&&(!q||p.name.toLowerCase().includes(q)))
-    .sort((a,b)=>a.name.localeCompare(b.name));
   const el=document.getElementById("anagTable"); if(!el) return;
-  if(!list.length){ el.innerHTML=`<div class="empty">Nessun giocatore.</div>`; return; }
-  const hasCalcio=list.some(p=>p.team==="calcio");
-  const numCols=hasCalcio?`<th style="text-align:center">N° Casa</th><th style="text-align:center">N° Trasferta</th>`:"";
-  el.innerHTML=`<table><thead><tr><th>Giocatore</th><th>Squadra</th><th>N° Tesserino</th><th>Scadenza cert. medico</th><th>Stato</th>${numCols}</tr></thead><tbody>${
-    list.map(p=>{
-      const s=certStatus(p.certScadenza);
+  try{
+    const q=(document.getElementById("anagSearch")?.value||"").toLowerCase();
+    let list=db.players.filter(p=>inScope(p.team)&&(!q||p.name.toLowerCase().includes(q)))
+      .sort((a,b)=>a.name.localeCompare(b.name));
+    if(!list.length){ el.innerHTML=`<div class="empty">Nessun giocatore.</div>`; return; }
+    const hasCalcio=list.some(p=>p.team==="calcio");
+    const numCols=hasCalcio?`<th style="text-align:center">N° Casa</th><th style="text-align:center">N° Trasferta</th>`:"";
+    const rows=list.map(p=>{
+      const team=TEAMS[p.team]||TEAMS["calcio"];
+      const s=certStatus(p.certScadenza||"");
       const extra=s.days==null?"":(s.days<0?` · scaduto da ${-s.days} gg`:` · tra ${s.days} gg`);
       const certCell=p.certScadenza?fmtDate(p.certScadenza):"—";
       const tessCell=isAdmin
         ?`<input type="text" value="${esc(p.tesserino||"")}" placeholder="—" style="width:100px;font-family:monospace;font-size:13px" onchange="setTesserino('${p.id}',this.value)">`
         :`<span style="font-family:monospace;font-size:13px">${esc(p.tesserino||"—")}</span>`;
       const numInput=(field)=>isAdmin
-        ?`<input type="number" min="1" max="99" value="${esc(p[field]||"")}" placeholder="—" style="width:54px;text-align:center;font-weight:700;font-size:14px" onchange="setNumMaglia('${p.id}','${field}',this.value)">`
+        ?`<input type="number" min="1" max="99" value="${p[field]||""}" placeholder="—" style="width:54px;text-align:center;font-weight:700;font-size:14px" onchange="setNumMaglia('${p.id}','${field}',this.value)">`
         :`<span style="font-weight:700">${p[field]||"—"}</span>`;
-      const numCells=hasCalcio?`<td style="text-align:center">${p.team==="calcio"?numInput("numCasa"):""}</td><td style="text-align:center">${p.team==="calcio"?numInput("numTrasferta"):""}</td>`:"";
+      const numCells=hasCalcio
+        ?`<td style="text-align:center">${p.team==="calcio"?numInput("numCasa"):""}</td><td style="text-align:center">${p.team==="calcio"?numInput("numTrasferta"):""}</td>`
+        :"";
       return `<tr>
         <td style="font-weight:600">${esc(p.name)}</td>
-        <td><span class="team-badge ${TEAMS[p.team].cls}">${TEAMS[p.team].name.toUpperCase()}</span></td>
+        <td><span class="team-badge ${team.cls}">${team.name.toUpperCase()}</span></td>
         <td>${tessCell}</td>
         <td style="font-family:monospace;font-size:13px">${certCell}</td>
         <td><span class="pill ${s.cls}">${s.label}</span><span style="font-size:11px;color:var(--muted)">${extra}</span></td>
         ${numCells}
       </tr>`;
-    }).join("")
-  }</tbody></table>`;
+    }).join("");
+    el.innerHTML=`<table><thead><tr><th>Giocatore</th><th>Squadra</th><th>N° Tesserino</th><th>Scadenza cert. medico</th><th>Stato</th>${numCols}</tr></thead><tbody>${rows}</tbody></table>`;
+  }catch(e){ el.innerHTML=`<div class="empty">Errore nel caricamento: ${e.message}</div>`; }
 }
 function setTesserino(pid,val){
   if(!isAdmin) return;

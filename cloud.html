@@ -863,8 +863,9 @@ function setCertParts(pid){
   const d=document.getElementById("cd_d_"+pid)?.value;
   const m=document.getElementById("cd_m_"+pid)?.value;
   const y=document.getElementById("cd_y_"+pid)?.value;
-  const val=(d&&m&&y)?`${y}-${m}-${d}`:"";
-  setCert(pid, val);
+  // salva solo quando tutti e tre i campi sono compilati (evita re-render parziale)
+  if(d&&m&&y) setCert(pid,`${y}-${m}-${d}`);
+  else if(!d&&!m&&!y) setCert(pid,"");
 }
 function setCert(pid,val){ if(!isAdmin) return; const p=db.players.find(x=>x.id===pid); if(p){ p.certScadenza=val; save(); renderCerts(); } }
 

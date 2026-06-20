@@ -126,7 +126,8 @@
   /* calendario mensile */
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px}
   .cal-head{text-align:center;font-size:12px;font-weight:700;color:var(--muted);padding:6px 0;text-transform:uppercase}
-  .cal-day{min-height:72px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px;position:relative}
+  .cal-day{min-height:72px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px;position:relative;transition:background .15s}
+  .cal-day:hover{background:#fffae8}
   .cal-day.other-month{background:#f8f7f3;opacity:0.5}
   .cal-day.today{border:2px solid var(--yellow)}
   .cal-day-num{font-size:13px;font-weight:700;color:#333;margin-bottom:4px}
@@ -1031,7 +1032,8 @@ function renderCalMonth(){
   for(let d=1;d<=daysInMonth;d++){
     const iso=calYear+"-"+String(calMonth+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
     const isToday=iso===today;
-    html+=`<div class="cal-day${isToday?" today":""}">`;
+    const dayClick=isAdmin?`onclick="openEvent(null,'${iso}')"`:"";
+    html+=`<div class="cal-day${isToday?" today":""}" ${dayClick} style="${isAdmin?"cursor:pointer":""}">`;
     html+=`<div class="cal-day-num">${d}</div>`;
     (evByDay[d]||[]).sort((a,b)=>a.time.localeCompare(b.time)).forEach(e=>{
       const icon=e.kind==="partita"?"🏆":"🏃";
@@ -1145,10 +1147,10 @@ function evHTML(e){
     <div style="flex:1"><div style="font-weight:700">${icon} ${e.kind==="partita"?("vs "+esc(e.opponent||"—")):"Allenamento"} <span class="pill ${TEAMS[e.team].cls}">${TEAMS[e.team].emoji}</span>${result}</div>
     <div class="hint">${e.time||"--:--"} · 📍 ${esc(e.field||"—")}${e.note?" · "+esc(e.note):""}</div>${scorers}</div></div>`;
 }
-function openEvent(id){
+function openEvent(id,preDate){
   if(!isAdmin) return;
   editingEvent=id?db.events.find(e=>e.id===id):null;
-  const e=editingEvent||{kind:"allenamento",team:scope==="volley"?"volley":"calcio",date:todayISO(),time:"19:00",field:db.fields[0]||"",opponent:"",note:""};
+  const e=editingEvent||{kind:"allenamento",team:scope==="volley"?"volley":"calcio",date:preDate||todayISO(),time:"19:00",field:db.fields[0]||"",opponent:"",note:""};
   const fo=db.fields.map(f=>`<option ${e.field===f?"selected":""}>${esc(f)}</option>`).join("");
   showModal(`<h2>${id?"Modifica":"Nuovo"} evento</h2>
     <div class="seg"><input type="radio" name="ekind" id="ek-a" class="v-team" value="allenamento" ${e.kind==="allenamento"?"checked":""} onchange="updateEventForm()"><label for="ek-a">🏃 Allenamento</label>

@@ -747,7 +747,6 @@ function openPlayer(id){
     </div>
     <label class="field">N° Tesserino<input type="text" id="pTesserino" value="${esc(p.tesserino||"")}" placeholder="es. 123456"></label>
     <label class="field">Scadenza certificato medico<input type="date" id="pCert" value="${p.certScadenza||""}"></label>
-    <label class="field">Email account giocatore (per il login in sola lettura)<input type="email" id="pEmail" value="${esc(p.email||"")}" placeholder="es. mario.rossi@email.it"></label>
     <label class="field" style="flex-direction:row;align-items:center;gap:10px;cursor:pointer">
       <input type="checkbox" id="pAttivo" ${attivoChk} style="width:18px;height:18px;cursor:pointer">
       <span>Giocatore attivo (deseleziona per segnare come ex-giocatore)</span>
@@ -763,7 +762,7 @@ function applyGenderDefaults(){
 function savePlayer(){
   const name=document.getElementById("pName").value.trim();
   if(!name){ alert("Inserisci il nome."); return; }
-  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,tesserino:(document.getElementById("pTesserino").value||"").trim(),certScadenza:document.getElementById("pCert").value||"",email:(document.getElementById("pEmail").value||"").trim(),attivo:document.getElementById("pAttivo").checked};
+  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,tesserino:(document.getElementById("pTesserino").value||"").trim(),certScadenza:document.getElementById("pCert").value||"",attivo:document.getElementById("pAttivo").checked};
   if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},iscrizioni:{},...o});
   save(); closeModal(); renderAll();
 }
@@ -889,8 +888,9 @@ function renderCalMonth(){
     (evByDay[d]||[]).sort((a,b)=>a.time.localeCompare(b.time)).forEach(e=>{
       const icon=e.kind==="partita"?"🏆":"🏃";
       const label=e.kind==="partita"?("vs "+esc(e.opponent||"?")):"Allenamento";
+      const fieldShort=e.field?` · 📍${esc(e.field)}`:"";
       const click=isAdmin?`onclick="openEvent('${e.id}')"` :"";
-      html+=`<div class="cal-ev ${e.team}${e.kind==="partita"?" partita":""}" ${click} title="${e.time} · ${label}">${icon} ${label}</div>`;
+      html+=`<div class="cal-ev ${e.team}${e.kind==="partita"?" partita":""}" ${click} title="${e.time} · ${label}${fieldShort}">${icon} ${e.time||""} ${label}${fieldShort}</div>`;
     });
     html+=`</div>`;
   }

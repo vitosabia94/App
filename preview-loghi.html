@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Preview loghi</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 30px; }
+  h2 { color: #1a1a2e; margin-top: 32px; }
+  .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+  .box { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 2px 12px #0001; text-align: center; min-width: 120px; }
+  .label { font-size: 12px; color: #888; margin-top: 8px; }
+  .pill { display:inline-block; border-radius:6px; padding:2px 10px; font-size:12px; font-weight:700; margin:2px; }
+</style>
+</head>
+<body>
+
+<h2>Logo attuale (logo.svg)</h2>
+<div class="row">
+  <div class="box">
+    <img src="logo.svg" width="96" height="96">
+    <div class="label">Corrente</div>
+  </div>
+</div>
+
+<h2>Opzione A — Logo più pulito (cerchio giallo, gazza stilizzata)</h2>
+<div class="row">
+  <div class="box">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="96" height="96">
+      <!-- sfondo giallo -->
+      <circle cx="100" cy="100" r="100" fill="#f2c200"/>
+      <!-- anello nero -->
+      <circle cx="100" cy="100" r="86" fill="none" stroke="#111" stroke-width="14"/>
+      <!-- FC -->
+      <text x="65" y="70" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="40" fill="#111">F</text>
+      <text x="135" y="70" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="40" fill="#111">C</text>
+      <!-- linea separatrice -->
+      <line x1="48" y1="78" x2="152" y2="78" stroke="#111" stroke-width="3"/>
+      <!-- ISTRIA -->
+      <text x="100" y="120" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="26" letter-spacing="4" fill="#111">ISTRIA</text>
+      <!-- gazza semplificata -->
+      <ellipse cx="100" cy="152" rx="22" ry="12" fill="#111"/>
+      <ellipse cx="86" cy="147" rx="9" ry="7" fill="#111"/>
+      <circle cx="80" cy="144" r="5" fill="#111"/>
+      <circle cx="78" cy="143" r="1.5" fill="#f2c200"/>
+      <path d="M74 144 L65 142 L65 146 Z" fill="#111"/>
+      <!-- ali -->
+      <path d="M92 142 C96 134 108 130 120 132 C114 138 107 143 100 143Z" fill="#111"/>
+      <path d="M100 143 C106 135 118 131 128 135 C120 140 112 144 104 145Z" fill="#333"/>
+    </svg>
+    <div class="label">Opzione A</div>
+  </div>
+
+  <div class="box">
+    <!-- Opzione B: scudo -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" width="88" height="96">
+      <!-- scudo giallo -->
+      <path d="M100 10 L185 45 L185 130 C185 175 100 210 100 210 C100 210 15 175 15 130 L15 45 Z" fill="#f2c200"/>
+      <!-- bordo nero -->
+      <path d="M100 10 L185 45 L185 130 C185 175 100 210 100 210 C100 210 15 175 15 130 L15 45 Z" fill="none" stroke="#111" stroke-width="10"/>
+      <!-- FC -->
+      <text x="65" y="90" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="38" fill="#111">F</text>
+      <text x="135" y="90" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="38" fill="#111">C</text>
+      <!-- ISTRIA -->
+      <text x="100" y="165" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="22" letter-spacing="3" fill="#111">ISTRIA</text>
+      <!-- barra centrale -->
+      <rect x="90" y="95" width="20" height="4" fill="#111" rx="2"/>
+    </svg>
+    <div class="label">Opzione B (scudo)</div>
+  </div>
+
+  <div class="box">
+    <!-- Opzione C: cerchio con strisce e testo moderno -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="96" height="96">
+      <defs>
+        <clipPath id="c"><circle cx="100" cy="100" r="86"/></clipPath>
+      </defs>
+      <circle cx="100" cy="100" r="100" fill="#f2c200"/>
+      <circle cx="100" cy="100" r="86" fill="#111"/>
+      <!-- strisce bianche diagonali -->
+      <g clip-path="url(#c)">
+        <rect x="-50" y="60" width="300" height="22" fill="#f2c200" transform="rotate(-20,100,100)"/>
+        <rect x="-50" y="110" width="300" height="22" fill="#f2c200" transform="rotate(-20,100,100)"/>
+      </g>
+      <!-- cerchio interno -->
+      <circle cx="100" cy="100" r="86" fill="none" stroke="#f2c200" stroke-width="5"/>
+      <!-- testo -->
+      <text x="100" y="88" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="28" fill="#f2c200">FC</text>
+      <text x="100" y="120" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="20" letter-spacing="3" fill="#f2c200">ISTRIA</text>
+    </svg>
+    <div class="label">Opzione C (moderno)</div>
+  </div>
+</div>
+
+<h2>Badge squadra (attuale vs alternative)</h2>
+<div class="row">
+  <div class="box">
+    <div style="font-size:28px">🐦‍⬛</div>
+    <div class="label">Attuale (emoji)</div>
+  </div>
+  <div class="box">
+    <span class="pill" style="background:#f2c200;color:#111;font-size:14px">⚽ Calcio</span><br><br>
+    <span class="pill" style="background:#f2c200;color:#111;font-size:14px">🏐 Volley</span>
+    <div class="label">Opzione 1</div>
+  </div>
+  <div class="box">
+    <span class="pill" style="background:#111;color:#f2c200;font-size:14px">FC ISTRIA</span><br><br>
+    <span class="pill" style="background:#111;color:#f2c200;font-size:14px">IS. VOLLEY</span>
+    <div class="label">Opzione 2</div>
+  </div>
+  <div class="box">
+    <span class="pill" style="background:#1a3a5c;color:#fff;font-size:14px">🏆 Calcio</span><br><br>
+    <span class="pill" style="background:#2d6a4f;color:#fff;font-size:14px">🏐 Volley</span>
+    <div class="label">Opzione 3 (colori diversi)</div>
+  </div>
+</div>
+
+<h2>Badge genere (attuale vs alternative)</h2>
+<div class="row">
+  <div class="box">
+    <span class="pill" style="background:#d5eaf5;color:#1a6091">M</span>
+    <span class="pill" style="background:#e8d5f5;color:#7b3fa0">F</span>
+    <div class="label">Attuale</div>
+  </div>
+  <div class="box">
+    <span class="pill" style="background:#111;color:#f2c200">M</span>
+    <span class="pill" style="background:#f2c200;color:#111">F</span>
+    <div class="label">Opzione A (colori squadra)</div>
+  </div>
+  <div class="box">
+    <span style="font-size:20px">♂</span>
+    <span style="font-size:20px">♀</span>
+    <div class="label">Opzione B (simboli grandi)</div>
+  </div>
+  <div class="box">
+    <span class="pill" style="background:#e8f4fd;color:#2980b9;border:1px solid #2980b9">Uomo</span>
+    <span class="pill" style="background:#fdf2f8;color:#c0392b;border:1px solid #c0392b">Donna</span>
+    <div class="label">Opzione C (testo)</div>
+  </div>
+</div>
+
+</body>
+</html>

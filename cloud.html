@@ -113,6 +113,24 @@
   .mcell.partial{background:#fff5e0;color:#b9852b;font-size:11px}
   .mcell.absent{background:#f0f0f0;color:#aaa;font-style:italic;font-size:11px}
   footer{text-align:center;color:var(--muted);font-size:12px;padding:18px}
+  /* calendario mensile */
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px}
+  .cal-head{text-align:center;font-size:12px;font-weight:700;color:var(--muted);padding:6px 0;text-transform:uppercase}
+  .cal-day{min-height:72px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px;position:relative}
+  .cal-day.other-month{background:#f8f9fa;opacity:0.5}
+  .cal-day.today{border:2px solid var(--navy)}
+  .cal-day-num{font-size:13px;font-weight:700;color:#333;margin-bottom:4px}
+  .cal-ev{font-size:10px;padding:2px 5px;border-radius:5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;font-weight:600}
+  .cal-ev.calcio{background:#fff3b0;color:#7a6000}
+  .cal-ev.volley{background:#d4edda;color:#1a5e32}
+  .cal-ev.partita{border-left:3px solid #f2c200}
+  /* risultati -->
+  .risultati-wrap{display:flex;gap:16px;align-items:flex-start}
+  .risultati-main{flex:1;min-width:0}
+  .risultati-side{width:220px;flex:0 0 220px}
+  @media(max-width:700px){.risultati-wrap{flex-direction:column}.risultati-side{width:100%}}
+  .trend-dot{display:inline-block;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:900;line-height:22px;text-align:center;color:#fff;margin:1px}
+  .trend-dot.V{background:var(--in)}.trend-dot.X{background:var(--muted)}.trend-dot.P{background:var(--out)}
   @media print{header,nav,.toolbar,.btn,footer,.lockbtn{display:none!important}.view{display:block!important}body{background:#fff}.card{box-shadow:none;break-inside:avoid}#lock{display:none!important}}
 </style>
 </head>
@@ -227,9 +245,20 @@
       <button class="btn admin-only" onclick="openEvent()">+ Nuovo evento</button>
       <button class="btn ghost admin-only" onclick="openFields()">⚙️ Gestione campi</button>
       <div class="grow"></div>
-      <select id="filterEvent" style="width:auto" onchange="renderEvents()">
+      <div class="seg" id="calViewSeg">
+        <input type="radio" name="calview" id="cv-lista" value="lista" checked onchange="renderCalendario()"><label for="cv-lista">📋 Lista</label>
+        <input type="radio" name="calview" id="cv-mese" value="mese" onchange="renderCalendario()"><label for="cv-mese">📅 Mese</label>
+        <input type="radio" name="calview" id="cv-risultati" value="risultati" onchange="renderCalendario()"><label for="cv-risultati">🏆 Risultati</label>
+      </div>
+      <select id="filterEvent" style="width:auto" onchange="renderCalendario()">
         <option value="all">Tutti</option><option value="allenamento">Allenamenti</option><option value="partita">Partite</option>
       </select>
+    </div>
+    <!-- navigazione mese (solo vista mese) -->
+    <div id="calMonthNav" style="display:none;align-items:center;gap:12px;margin-bottom:12px">
+      <button class="btn ghost sm" onclick="calMonthShift(-1)">‹</button>
+      <b id="calMonthLabel" style="min-width:150px;text-align:center;font-size:16px"></b>
+      <button class="btn ghost sm" onclick="calMonthShift(1)">›</button>
     </div>
     <div id="eventsList"></div>
   </section>
@@ -807,7 +836,20 @@ function renderCerts(){
 function setCert(pid,val){ if(!isAdmin) return; const p=db.players.find(x=>x.id===pid); if(p){ p.certScadenza=val; save(); renderCerts(); } }
 
 /* ============ CALENDARIO ============ */
-function renderEvents(){
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+function calMonthShift(d){ calMonth+=d; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} renderCalendario(); }
+
+function renderCalendario(){
+  const view=document.querySelector('input[name="calview"]:checked')?.value||"lista";
+  document.getElementById("calMonthNav").style.display=view==="mese"?"flex":"none";
+  document.getElementById("filterEvent").style.display=view==="risultati"?"none":"";
+  if(view==="lista") renderEventsList();
+  else if(view==="mese") renderCalMonth();
+  else renderRisultati();
+}
+function renderEvents(){ renderCalendario(); }
+
+function renderEventsList(){
   const fe=document.getElementById("filterEvent").value;
   let list=db.events.filter(e=>inScope(e.team)&&(fe==="all"||e.kind===fe)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
   const el=document.getElementById("eventsList");
@@ -815,6 +857,126 @@ function renderEvents(){
   const t=todayISO(),up=list.filter(e=>e.date>=t),pa=list.filter(e=>e.date<t).reverse();
   const card=(arr,title)=>arr.length?`<div class="card"><h2>${title}</h2>${arr.map(evHTML).join("")}</div>`:"";
   el.innerHTML=card(up,"Prossimi eventi")+card(pa,"Passati");
+}
+
+function renderCalMonth(){
+  const el=document.getElementById("eventsList");
+  const DAYS=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+  const mLabel=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+  document.getElementById("calMonthLabel").textContent=mLabel[calMonth]+" "+calYear;
+  // primo giorno del mese (0=dom → converti a lun=0)
+  const firstDay=new Date(calYear,calMonth,1);
+  let startDow=(firstDay.getDay()+6)%7; // lun=0
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const today=todayISO();
+  // raccoglie eventi del mese
+  const prefix=calYear+"-"+String(calMonth+1).padStart(2,"0");
+  const evByDay={};
+  db.events.filter(e=>inScope(e.team)&&e.date.startsWith(prefix)).forEach(e=>{
+    const day=parseInt(e.date.split("-")[2]);
+    if(!evByDay[day]) evByDay[day]=[];
+    evByDay[day].push(e);
+  });
+  let html=`<div class="card"><div class="cal-grid">`;
+  DAYS.forEach(d=>html+=`<div class="cal-head">${d}</div>`);
+  // celle vuote prima del primo giorno
+  for(let i=0;i<startDow;i++) html+=`<div class="cal-day other-month"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const iso=calYear+"-"+String(calMonth+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    const isToday=iso===today;
+    html+=`<div class="cal-day${isToday?" today":""}">`;
+    html+=`<div class="cal-day-num">${d}</div>`;
+    (evByDay[d]||[]).sort((a,b)=>a.time.localeCompare(b.time)).forEach(e=>{
+      const icon=e.kind==="partita"?"🏆":"🏃";
+      const label=e.kind==="partita"?("vs "+esc(e.opponent||"?")):"Allenamento";
+      const click=isAdmin?`onclick="openEvent('${e.id}')"` :"";
+      html+=`<div class="cal-ev ${e.team}${e.kind==="partita"?" partita":""}" ${click} title="${e.time} · ${label}">${icon} ${label}</div>`;
+    });
+    html+=`</div>`;
+  }
+  // celle vuote dopo l'ultimo giorno
+  const endDow=(startDow+daysInMonth)%7;
+  if(endDow>0) for(let i=endDow;i<7;i++) html+=`<div class="cal-day other-month"></div>`;
+  html+=`</div></div>`;
+  el.innerHTML=html;
+}
+
+function renderRisultati(){
+  const el=document.getElementById("eventsList");
+  // partite con risultato
+  const partite=db.events.filter(e=>inScope(e.team)&&e.kind==="partita"&&e.scoreFor!=null&&e.scoreAgainst!=null)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  if(!partite.length){ el.innerHTML=`<div class="card"><div class="empty">Nessuna partita con risultato registrata.</div></div>`; return; }
+
+  // funzione esito
+  const esito=e=>e.scoreFor>e.scoreAgainst?"V":e.scoreFor<e.scoreAgainst?"P":"X";
+  const esitoCol=r=>r==="V"?"var(--in)":r==="P"?"var(--out)":"var(--muted)";
+
+  // statistiche per squadra
+  const stats={};
+  ["calcio","volley"].forEach(t=>{
+    const pp=partite.filter(e=>e.team===t);
+    const v=pp.filter(e=>esito(e)==="V").length, x=pp.filter(e=>esito(e)==="X").length, p=pp.filter(e=>esito(e)==="P").length;
+    const gf=pp.reduce((s,e)=>s+e.scoreFor,0), gs=pp.reduce((s,e)=>s+e.scoreAgainst,0);
+    stats[t]={tot:pp.length,v,x,p,gf,gs,pts:v*3+x};
+  });
+
+  // trend ultimi risultati (max 8)
+  const trendHTML=list=>list.slice(0,8).reverse().map(e=>{
+    const r=esito(e); return `<span class="trend-dot ${r}">${r}</span>`;
+  }).join("");
+
+  // tabella risultati
+  let rows=partite.map(e=>{
+    const r=esito(e);
+    const col=esitoCol(r);
+    const scorers=e.scorers&&e.scorers.length?e.scorers.map(s=>{const p=db.players.find(x=>x.id===s.playerId);return(p?esc(p.name):"?")+(s.goals>1?" ("+s.goals+")":"");}).join(", "):"";
+    const click=isAdmin?`style="cursor:pointer" onclick="openEvent('${e.id}')"` :"";
+    return `<tr ${click}>
+      <td style="color:var(--muted);font-size:12px">${fmtDate(e.date)}</td>
+      <td><span class="pill ${e.team}">${TEAMS[e.team].emoji}</span></td>
+      <td style="font-weight:700">vs ${esc(e.opponent||"—")}</td>
+      <td style="text-align:center;font-weight:900;font-size:18px;color:${col}">${e.scoreFor}–${e.scoreAgainst}</td>
+      <td><span style="font-weight:800;color:${col};border:1px solid ${col};border-radius:5px;padding:1px 7px;font-size:12px">${r}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${scorers?("⚽ "+scorers):""}</td>
+    </tr>`;
+  }).join("");
+
+  // marcatori (calcio)
+  const goalMap={};
+  partite.filter(e=>e.team==="calcio").forEach(e=>(e.scorers||[]).forEach(s=>{goalMap[s.playerId]=(goalMap[s.playerId]||0)+(s.goals||1);}));
+  const topScorers=Object.entries(goalMap).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  let scorerRows=topScorers.length?topScorers.map(([pid,g],i)=>{
+    const p=db.players.find(x=>x.id===pid);
+    return `<tr><td style="font-weight:700;color:var(--muted);text-align:center;width:28px">${i+1}</td><td style="font-weight:600">${p?esc(p.name):"?"}</td><td style="text-align:center;font-weight:900;color:var(--in)">${g} ⚽</td></tr>`;
+  }).join(""):`<tr><td colspan="3" style="text-align:center;color:#aaa;padding:16px">Nessun gol registrato</td></tr>`;
+
+  // riepilogo squadre
+  const summaryHTML=Object.entries(stats).filter(([,s])=>s.tot>0).map(([t,s])=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 12px;background:#f8f9fa;border-radius:10px">
+      <span class="pill ${t}">${TEAMS[t].emoji} ${TEAMS[t].name}</span>
+      <span style="font-size:13px"><b>${s.tot}</b> partite · <b style="color:var(--in)">${s.v}V</b> <b style="color:var(--muted)">${s.x}X</b> <b style="color:var(--out)">${s.p}P</b> · <b>${s.gf}</b>:<b>${s.gs}</b> gol</span>
+    </div>
+    <div style="margin-bottom:12px;padding:0 4px">${trendHTML(partite.filter(e=>e.team===t))}</div>
+  `).join("");
+
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:12px">${summaryHTML}</div>
+    <div class="risultati-wrap">
+      <div class="risultati-main">
+        <div class="card" style="padding:6px 8px">
+          <table><thead><tr>
+            <th>Data</th><th></th><th>Avversario</th><th>Risultato</th><th>Esito</th><th>Marcatori</th>
+          </tr></thead><tbody>${rows}</tbody></table>
+        </div>
+      </div>
+      <div class="risultati-side">
+        <div class="card">
+          <h2 style="margin-bottom:10px">⚽ Classifica marcatori</h2>
+          <table style="width:100%"><tbody>${scorerRows}</tbody></table>
+        </div>
+      </div>
+    </div>`;
 }
 function evHTML(e){
   const d=new Date(e.date+"T00:00"),icon=e.kind==="partita"?"🏆":"🏃";
@@ -965,7 +1127,7 @@ function loadDemo(){
 }
 
 /* ============ RENDER ============ */
-function renderAll(){ renderDashboard(); renderMoves(); renderPlayers(); renderCerts(); renderEvents(); }
+function renderAll(){ renderDashboard(); renderMoves(); renderPlayers(); renderCerts(); renderCalendario(); }
 window.addEventListener("resize",()=>{ if(document.getElementById("view-dashboard").classList.contains("active")) renderDashboard(); });
 initAuth();
 </script>

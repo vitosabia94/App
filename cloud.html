@@ -122,12 +122,10 @@
   <div class="box">
     <img src="logo.svg" alt="Logo" class="logo-lg">
     <h1>Gestione Istria</h1>
-    <p id="lockMsg">Accedi con le tue credenziali</p>
-    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
-    <input type="password" id="loginPwd" placeholder="Password" autocomplete="current-password" style="margin-top:10px" onkeydown="if(event.key==='Enter')doLogin()">
+    <p id="lockMsg">Inserisci la password per accedere</p>
+    <input type="password" id="loginPwd" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn" style="width:100%;margin-top:14px" onclick="doLogin()" id="lockBtn">Accedi</button>
     <div class="err" id="lockErr"></div>
-    <div class="hint" style="margin-top:12px"><a href="#" onclick="resetPwd();return false" style="color:var(--navy)">Password dimenticata?</a></div>
   </div>
 </div>
 
@@ -294,106 +292,83 @@ const QUOTA_MENSILE={M:30,F:20};      // Uomini 30€/mese, Donne 20€/mese
 const QUOTA_ISCRIZIONE={M:20,F:50};   // Iscrizione: Uomini 20€, Donne 50€ (una tantum a inizio stagione)
 const MONTHS=["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
 
-/* ============ LOGO ============ */
-function logoErr(img){
-  if(img.dataset.tried!=="svg"){ img.dataset.tried="svg"; img.src="logo.svg"; return; }
-  const big=img.classList.contains("logo-lg");
-  const s=document.createElement("span"); s.textContent="🐦‍⬛"; s.style.fontSize=big?"60px":"28px";
-  img.replaceWith(s);
-}
+/* ============ AUTH (password semplice) ============ */
+// Hash SHA-256 delle password: admin=acquadimax, user=vaglimerda
+const HASH_ADMIN="357486d9f291cec6777a6f97c1735d24ee65a9ff750813154d1e95f70a905846";
+const HASH_USER ="8a9f284649b5e08901beb31d683b4d53bccdbfdbf481fa5b98a54af03ee3c976";
 
-/* ============ AUTH (Supabase) ============ */
-let sb=null, currentUser=null;
+let sb=null;
 function defaultDb(){ return {moves:[],players:[],events:[],fields:["Campo Comunale","Palestra","Campo allenamento"]}; }
 let db=defaultDb();
+
+async function sha256(str){
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
 
 function initAuth(){
   const err=document.getElementById("lockErr");
   if(!window.supabase){ err.textContent="Libreria non caricata: serve una connessione a internet."; return; }
   if(SUPABASE_URL.startsWith("INCOLLA")||SUPABASE_ANON_KEY.startsWith("INCOLLA")){
-    document.getElementById("lockMsg").textContent="Configurazione mancante";
-    err.innerHTML="Apri il file cloud.html e incolla SUPABASE_URL e SUPABASE_ANON_KEY nella sezione CONFIG in cima allo script. Vedi la guida SETUP-SUPABASE.md.";
+    err.innerHTML="Configurazione mancante: apri cloud.html e inserisci SUPABASE_URL e SUPABASE_ANON_KEY.";
     document.getElementById("lockBtn").disabled=true; return;
   }
   sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-  sb.auth.getSession().then(({data})=>{ if(data.session){ currentUser=data.session.user; afterLogin(); } else { document.getElementById("loginEmail").focus(); } });
+  // check sessione salvata in sessionStorage
+  const saved=sessionStorage.getItem("istria_role");
+  if(saved==="admin"||saved==="user"){ isAdmin=(saved==="admin"); afterLogin(); }
+  else document.getElementById("loginPwd").focus();
 }
+
 async function doLogin(){
-  const email=document.getElementById("loginEmail").value.trim();
   const pwd=document.getElementById("loginPwd").value;
-  const err=document.getElementById("lockErr"); err.textContent="Accesso in corso…";
-  const {data,error}=await sb.auth.signInWithPassword({email,password:pwd});
-  if(error){ err.textContent="Email o password non corretti."; return; }
-  currentUser=data.user; err.textContent=""; afterLogin();
+  const err=document.getElementById("lockErr"); err.textContent="";
+  if(!pwd){ err.textContent="Inserisci la password."; return; }
+  const h=await sha256(pwd);
+  if(h===HASH_ADMIN){ isAdmin=true; sessionStorage.setItem("istria_role","admin"); afterLogin(); }
+  else if(h===HASH_USER){ isAdmin=false; sessionStorage.setItem("istria_role","user"); afterLogin(); }
+  else { err.textContent="Password non corretta."; document.getElementById("loginPwd").value=""; }
 }
+
 async function afterLogin(){
-  isAdmin=!!currentUser && ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((currentUser.email||"").toLowerCase());
   await loadData();
   subscribeRealtime();
   document.getElementById("lock").style.display="none";
   document.getElementById("app").classList.remove("app-hidden");
-  const lb=document.getElementById("logoutBtn"); if(lb&&currentUser) lb.title="Esci ("+currentUser.email+")";
   applyRole();
   renderAll();
 }
-function myPlayer(){
-  if(!currentUser||!currentUser.email) return null;
-  const e=currentUser.email.toLowerCase();
-  return db.players.find(p=>p.email && p.email.toLowerCase()===e)||null;
-}
+
+function myPlayer(){ return null; }
+
 function applyRole(){
   document.body.classList.toggle("role-user",!isAdmin);
-  // schede visibili
   const allowUser=["giocatori","certificati","calendario"];
   document.querySelectorAll("#nav button").forEach(b=>{
     b.style.display=(isAdmin||allowUser.includes(b.dataset.view))?"":"none";
   });
-  // sottotitolo + scope
   const sub=document.querySelector("header .sub");
   document.getElementById("scope").style.display=isAdmin?"":"none";
   if(!isAdmin){
-    const mp=myPlayer();
-    if(sub) sub.textContent="Area giocatore"+(mp?" — "+mp.name:"");
+    if(sub) sub.textContent="Area giocatori — sola lettura";
     scope="all";
-    // porta l'utente sulla prima scheda consentita
-    const first=document.querySelector('#nav button[data-view="giocatori"]');
     document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
     document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    const first=document.querySelector('#nav button[data-view="giocatori"]');
     if(first) first.classList.add("active");
     document.getElementById("view-giocatori").classList.add("active");
   }else{
     if(sub) sub.textContent="F.C. Istria & Istria Volley — cassa unica";
   }
 }
-async function logout(){
-  if(!confirm("Vuoi uscire?")) return;
+
+function logout(){
+  sessionStorage.removeItem("istria_role");
   if(realtimeCh){ sb.removeChannel(realtimeCh); realtimeCh=null; }
-  await sb.auth.signOut(); currentUser=null;
   document.getElementById("app").classList.add("app-hidden");
   document.getElementById("lock").style.display="flex";
-  document.getElementById("loginPwd").value=""; document.getElementById("loginEmail").focus();
-}
-async function resetPwd(){
-  const email=document.getElementById("loginEmail").value.trim();
-  if(!email){ document.getElementById("lockErr").textContent="Inserisci prima la tua email, poi premi di nuovo."; return; }
-  const {error}=await sb.auth.resetPasswordForEmail(email);
-  document.getElementById("lockErr").textContent=error?"Errore nell'invio.":"Ti abbiamo inviato una email per reimpostare la password.";
-}
-function openChangePwd(){
-  showModal(`<h2>Cambia la mia password</h2>
-    <label class="field">Nuova password<input type="password" id="cpNew"></label>
-    <label class="field">Conferma nuova<input type="password" id="cpNew2"></label>
-    <div class="err" id="cpErr" style="color:var(--out);font-size:13px"></div>
-    <div class="modal-actions"><button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="doChangePwd()">Salva</button></div>`);
-}
-async function doChangePwd(){
-  const err=document.getElementById("cpErr");
-  const n=document.getElementById("cpNew").value;
-  if(n.length<6){ err.textContent="Almeno 6 caratteri."; return; }
-  if(n!==document.getElementById("cpNew2").value){ err.textContent="Le password non coincidono."; return; }
-  const {error}=await sb.auth.updateUser({password:n});
-  if(error){ err.textContent="Errore: "+error.message; return; }
-  closeModal(); alert("Password aggiornata.");
+  document.getElementById("loginPwd").value="";
+  document.getElementById("loginPwd").focus();
 }
 
 /* ============ STORAGE (Supabase: documento condiviso) ============ */

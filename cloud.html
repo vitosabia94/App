@@ -45,8 +45,8 @@
   .stat.calcio{background:linear-gradient(135deg,#111,#c9a200)}
   .stat.volley{background:linear-gradient(135deg,#c9a200,#111)}
   .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
-  .pill.calcio{background:#fdf2bf;color:var(--calcio-dark)}
-  .pill.volley{background:#1a1a1a;color:#f2c200}
+  .pill.calcio{background:#f2c200;color:#111;font-size:12px}
+  .pill.volley{background:#f2c200;color:#111;font-size:12px}
   .pill.standard{background:#e7eef6;color:#2c5a86}
   .pill.straordinaria{background:#fbe8dd;color:var(--volley-dark)}
   .pill.accessoria{background:#efe7f6;color:#6b4b8a}
@@ -283,7 +283,7 @@ const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
    entrano come "giocatore" in sola lettura. Aggiungi qui altre email admin. */
 const ADMIN_EMAILS=["vitosabia3@gmail.com"];
 
-const TEAMS={calcio:{name:"F.C. Istria",emoji:"🐦‍⬛",cls:"calcio"},volley:{name:"Istria Volley",emoji:"🐦‍⬛",cls:"volley"}};
+const TEAMS={calcio:{name:"F.C. Istria",emoji:"⚽",cls:"calcio"},volley:{name:"Istria Volley",emoji:"🏐",cls:"volley"}};
 const CATS={
   entrata:["Quote giocatori","Iscrizioni","Sponsor","Incasso partite","Eventi/Tornei","Contributi","Altro"],
   uscita:["Arbitri","Affitto campo","Attrezzatura","Divise","Iscrizioni","Trasferte","Materiale sanitario","Cancelleria","Altro"]
@@ -613,7 +613,7 @@ function renderPlayers(){
     const paidCount=months.filter(mo=>p.payments[mo.key]&&!p.payments[mo.key].assente).length;
     const inactiveBadge=p.attivo===false?` <span class="pill" style="background:#ccc;color:#555">Inattivo</span>`:"";
     const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a> <a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy)" title="Storico">📋</a>`:"";
-    rows+=`<tr style="${p.attivo===false?'opacity:0.55':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?'<span style="background:#e8d5f5;color:#7b3fa0;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">F</span>':'<span style="background:#d5eaf5;color:#1a6091;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">M</span>'}</span>${inactiveBadge}
+    rows+=`<tr style="${p.attivo===false?'opacity:0.55':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>${inactiveBadge}
       <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} mesi${pencil}</div></td>${iscCell}${cells}</tr>`;
   });
   const toggleBtn=isAdmin&&inactiveCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi inattivi":"Mostra inattivi ("+inactiveCount+")"}</button>`:"";
@@ -753,7 +753,7 @@ function openPlayerHistory(id){
   const totalGoals=p.team==="calcio"?playerGoals(p.id):null;
   const goalSummary=p.team==="calcio"?`<p style="margin-top:8px">Totale gol in carriera: <b>${totalGoals} ⚽</b></p>`:"";
   showModal(`<h2>📋 Storico — ${esc(p.name)}</h2>
-    <p style="margin-bottom:12px"><span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].name}</span> · ${p.gender==="F"?"♀ Donna":"♂ Uomo"} · <span style="color:${p.attivo!==false?"var(--in)":"#aaa"}">${p.attivo!==false?"Attivo":"Inattivo"}</span></p>
+    <p style="margin-bottom:12px"><span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].name}</span> · ${TEAMS[p.team].emoji} ${p.gender==="F"?"Donna":"Uomo"} · <span style="color:${p.attivo!==false?"var(--in)":"#aaa"}">${p.attivo!==false?"Attivo":"Inattivo"}</span></p>
     <table style="width:100%;border-collapse:collapse">
       <thead><tr style="border-bottom:2px solid #eee"><th style="text-align:left">Stagione</th><th>Pagato</th><th>Mesi</th>${goalsHeader}</tr></thead>
       <tbody>${rows}</tbody>
@@ -792,7 +792,7 @@ function renderCerts(){
         ? `<input type="date" value="${p.certScadenza}" style="width:auto;margin:0;padding:6px 8px" onchange="setCert('${p.id}',this.value)">`
         : (p.certScadenza?fmtDate(p.certScadenza):"—");
       return `<tr>
-        <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?'<span style="background:#e8d5f5;color:#7b3fa0;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">F</span>':'<span style="background:#d5eaf5;color:#1a6091;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">M</span>'}</span></td>
+        <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span></td>
         <td>${TEAMS[p.team].name}</td>
         <td>${dateCell}</td>
         <td><span class="pill ${s.cls}">${s.label}</span> <span class="hint">${extra}</span></td>

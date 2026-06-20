@@ -673,10 +673,8 @@ function renderPlayers(){
     const fuoriRosa=p.seasonActive&&p.seasonActive[seasonStart]===false;
     const inactiveBadge=p.attivo===false?` <span class="pill" style="background:#ccc;color:#555">Ex-giocatore</span>`:
       fuoriRosa?` <span class="pill" style="background:#ffe0b2;color:#7a4300">Fuori rosa</span>`:"";
-    const toggleRosaBtn=isAdmin&&p.attivo!==false?` <a href="#" onclick="toggleSeasonRosa('${p.id}');return false" style="color:var(--muted);font-size:11px" title="${fuoriRosa?'Includi in questa stagione':'Escludi da questa stagione'}">${fuoriRosa?'+ rosa':'− rosa'}</a>`:"";
-    const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a> <a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy)" title="Storico">📋</a>`:"";
-    rows+=`<tr style="${p.attivo===false||fuoriRosa?'opacity:0.5':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>${inactiveBadge}
-      <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} mesi${pencil}${toggleRosaBtn}</div></td>${iscCell}${cells}</tr>`;
+    const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a><a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy)" title="Storico">📋</a>`:"";
+    rows+=`<tr style="${p.attivo===false||fuoriRosa?'opacity:0.5':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>${inactiveBadge}${pencil}</td>${iscCell}${cells}</tr>`;
   });
   const toggleBtn=isAdmin&&outCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi non in rosa":"Mostra non in rosa ("+outCount+")"}</button>`:"";
   el.innerHTML=`<div style="margin-bottom:6px">${toggleBtn}</div><div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;

@@ -1,50 +1,67 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
   <defs>
-    <pattern id="stripes" width="12" height="12" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-      <rect width="12" height="12" fill="#f2c200"/>
-      <rect width="6" height="12" fill="#ffffff"/>
+    <pattern id="stripes" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="20" height="20" fill="#f2c200"/>
+      <rect x="0" y="0" width="10" height="20" fill="#ffffff"/>
     </pattern>
-    <clipPath id="innerClip"><circle cx="100" cy="114" r="34"/></clipPath>
+    <clipPath id="innerCircleClip">
+      <circle cx="200" cy="210" r="82"/>
+    </clipPath>
+    <path id="bottomArc" d="M 68,220 A 132,132 0 0,0 332,220" fill="none"/>
   </defs>
 
-  <!-- disco giallo -->
-  <circle cx="100" cy="100" r="99" fill="#f2c200"/>
-  <!-- anello nero spesso -->
-  <circle cx="100" cy="100" r="88" fill="none" stroke="#111111" stroke-width="13"/>
+  <!-- CERCHIO GIALLO ESTERNO -->
+  <circle cx="200" cy="200" r="198" fill="#f2c200"/>
 
-  <!-- lettere F C -->
-  <text x="68"  y="66" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="46" fill="#111111">F</text>
-  <text x="132" y="66" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="46" fill="#111111">C</text>
-  <!-- ISTRIA -->
-  <text x="100" y="181" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-style="italic" font-size="32" letter-spacing="2" fill="#111111">ISTRIA</text>
+  <!-- ANELLO NERO SPESSO -->
+  <circle cx="200" cy="200" r="185" fill="none" stroke="#111111" stroke-width="28"/>
 
-  <!-- cerchio centrale a strisce -->
-  <circle cx="100" cy="114" r="34" fill="url(#stripes)"/>
-  <g clip-path="url(#innerClip)">
-    <!-- gazza in volo (testa a sinistra, ali aperte verso l'alto, coda lunga) -->
-    <path fill="#111111" d="M88 116
-      C84 110 84 104 88 100
-      C92 105 95 108 99 109
-      C104 95 116 86 132 82
-      C124 90 118 98 116 106
-      C124 99 132 95 141 95
-      C133 101 126 108 121 116
-      C127 113 134 112 140 114
-      C131 118 123 122 117 128
-      L150 150
-      L118 134
-      C114 140 107 143 100 142
-      C112 138 116 130 113 122
-      C108 126 100 127 92 124
-      C97 123 100 120 100 117
-      C96 119 91 119 88 116 Z"/>
+  <!-- LETTERA F -->
+  <text x="115" y="148" text-anchor="middle"
+        font-family="'Arial Black', Arial, sans-serif"
+        font-weight="900" font-size="100" fill="#111111">F</text>
+
+  <!-- LETTERA C -->
+  <text x="285" y="148" text-anchor="middle"
+        font-family="'Arial Black', Arial, sans-serif"
+        font-weight="900" font-size="100" fill="#111111">C</text>
+
+  <!-- ISTRIA curvo in basso -->
+  <text font-family="'Arial Black', Arial, sans-serif"
+        font-weight="900" font-size="52" fill="#111111" letter-spacing="8">
+    <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">ISTRIA</textPath>
+  </text>
+
+  <!-- CERCHIO INTERNO strisce -->
+  <circle cx="200" cy="210" r="82" fill="url(#stripes)"/>
+  <circle cx="200" cy="210" r="82" fill="none" stroke="#111111" stroke-width="9"/>
+
+  <!-- GAZZA — profilo sinistro, ali aperte verso l'alto -->
+  <g fill="#111111">
+    <!-- corpo -->
+    <path d="M178 235 C166 226 160 212 163 199 C166 186 177 179 190 180 C203 181 212 189 213 201 C215 213 207 226 196 232 C201 227 204 217 200 210 C196 203 188 201 183 204 C177 207 174 215 175 223 C176 229 178 235 178 235Z"/>
+    <!-- pancia gialla -->
+    <path d="M176 222 C176 213 181 206 187 204 C193 202 201 205 204 212 C207 219 204 228 198 233 C191 235 181 233 177 228Z" fill="#f2c200"/>
+    <!-- ala sinistra -->
+    <path d="M173 212 C167 206 153 194 139 186 C131 181 120 177 112 176 C118 181 127 186 131 191 C122 186 111 183 104 183 C111 189 123 194 129 200 C119 197 109 196 103 197 C111 203 124 207 132 210 C140 214 153 216 163 215 C170 214 174 213 173 212Z"/>
+    <!-- piume ala sx -->
+    <path d="M129 210 C122 203 118 194 121 186 C124 193 126 202 129 210Z" fill="#2a2a2a"/>
+    <path d="M138 213 C130 205 126 195 130 187 C133 195 135 204 138 213Z" fill="#2a2a2a"/>
+    <!-- ala destra -->
+    <path d="M215 212 C221 206 235 194 249 186 C257 181 268 177 276 176 C270 181 261 186 257 191 C266 186 277 183 284 183 C277 189 265 194 259 200 C269 197 279 196 285 197 C277 203 264 207 256 210 C248 214 235 216 225 215 C218 214 214 213 215 212Z"/>
+    <!-- piume ala dx -->
+    <path d="M259 210 C266 203 270 194 267 186 C264 193 262 202 259 210Z" fill="#2a2a2a"/>
+    <path d="M250 213 C258 205 262 195 258 187 C255 195 253 204 250 213Z" fill="#2a2a2a"/>
+    <!-- coda lunga destra -->
+    <path d="M213 234 C222 239 238 248 252 260 C260 269 264 280 262 290 C256 279 246 268 235 258 C240 269 243 282 242 293 C236 279 233 264 224 252 C220 245 216 238 213 234Z"/>
     <!-- testa -->
-    <circle cx="86" cy="108" r="7.5" fill="#111111"/>
+    <circle cx="162" cy="194" r="19"/>
     <!-- occhio -->
-    <circle cx="84" cy="106" r="1.8" fill="#f2c200"/>
+    <circle cx="155" cy="190" r="4" fill="#f2c200"/>
+    <circle cx="155" cy="190" r="2.2" fill="#111111"/>
+    <circle cx="154" cy="189" r="0.8" fill="#ffffff"/>
     <!-- becco -->
-    <path fill="#111111" d="M80 108 L70 106 L70 110 L80 111 Z"/>
+    <path d="M146 193 L132 190 L133 196 L146 196Z"/>
+    <line x1="133" y1="193" x2="146" y2="193" stroke="#f2c200" stroke-width="1.8"/>
   </g>
-  <!-- bordo cerchio centrale -->
-  <circle cx="100" cy="114" r="34" fill="none" stroke="#111111" stroke-width="5"/>
 </svg>

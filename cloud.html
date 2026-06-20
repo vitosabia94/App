@@ -254,6 +254,12 @@
         <option value="all">Tutti</option><option value="allenamento">Allenamenti</option><option value="partita">Partite</option>
       </select>
     </div>
+    <!-- navigazione stagione (sempre visibile) -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+      <button class="btn ghost sm" onclick="changeCalSeason(-1)">‹</button>
+      <b id="calSeasonLabel" style="min-width:110px;text-align:center;font-size:15px"></b>
+      <button class="btn ghost sm" onclick="changeCalSeason(1)">›</button>
+    </div>
     <!-- navigazione mese (solo vista mese) -->
     <div id="calMonthNav" style="display:none;align-items:center;gap:12px;margin-bottom:12px">
       <button class="btn ghost sm" onclick="calMonthShift(-1)">‹</button>
@@ -443,6 +449,8 @@ function migrate(d){
     if(p.attivo==null) p.attivo=true;
   });
   d.events.forEach(e=>{ if(e.kind==="partita"&&!e.scorers) e.scorers=[]; });
+  const curSeason=defaultSeasonStart();
+  d.players.forEach(p=>{ if(p.joinSeason==null) p.joinSeason=curSeason; });
   return d;
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
@@ -451,6 +459,7 @@ function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(
 let isAdmin=true;
 let scope="all", editingMove=null, editingPlayer=null, editingEvent=null;
 let seasonStart=defaultSeasonStart(), showInactive=false;
+let calSeasonStart=defaultSeasonStart();
 function defaultSeasonStart(){ const n=new Date(); return n.getMonth()>=6?n.getFullYear():n.getFullYear()-1; }
 
 /* ============ HELPERS ============ */
@@ -458,6 +467,8 @@ const eur=n=>(n<0?"-":"")+"€ "+Math.abs(n).toLocaleString("it-IT",{minimumFrac
 const fmtDate=s=>new Date(s+"T00:00").toLocaleDateString("it-IT",{day:"2-digit",month:"short",year:"numeric"});
 function inScope(t){ return scope==="all"||t===scope; }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
+function inSeason(dateStr, sy){ if(!dateStr) return false; const [y,m]=dateStr.split("-").map(Number); return (y===sy&&m>=9)||(y===sy+1&&m<=7); }
+function seasonLabel(sy){ return sy+"/"+(sy+1).toString().slice(2); }
 function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function seasonMonths(y){ const a=[]; for(let i=8;i<=17;i++){ const yr=y+Math.floor(i/12),m=i%12; a.push({key:yr+"-"+String(m+1).padStart(2,"0"),label:MONTHS[m],year:yr,m:m}); } return a; }
 
@@ -615,9 +626,9 @@ function playerPaymentsBySeason(p){
   return seasons;
 }
 function renderPlayers(){
-  document.getElementById("seasonLabel").textContent="Stagione "+seasonStart+"/"+String(seasonStart+1).slice(2);
+  document.getElementById("seasonLabel").textContent="Stagione "+seasonLabel(seasonStart);
   const months=seasonMonths(seasonStart);
-  let list=db.players.filter(p=>inScope(p.team)).sort((a,b)=>a.name.localeCompare(b.name));
+  let list=db.players.filter(p=>inScope(p.team)&&(p.joinSeason||0)<=seasonStart).sort((a,b)=>a.name.localeCompare(b.name));
   const inactiveCount=list.filter(p=>!p.attivo).length;
   const activeList=showInactive?list:list.filter(p=>p.attivo!==false);
   let totPaid=0,totDue=0;
@@ -733,14 +744,17 @@ function confirmIscrizione(pid){
 function openPlayer(id){
   if(!isAdmin) return;
   editingPlayer=id?db.players.find(p=>p.id===id):null;
-  const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",gender:"M",quotaMensile:QUOTA_MENSILE.M,quotaIscrizione:QUOTA_ISCRIZIONE.M,attivo:true};
+  const curSeason=defaultSeasonStart();
+  const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",gender:"M",quotaMensile:QUOTA_MENSILE.M,quotaIscrizione:QUOTA_ISCRIZIONE.M,attivo:true,joinSeason:seasonStart};
   const attivoChk=p.attivo!==false?"checked":"";
+  const joinSeasonOpts=Array.from({length:12},(_,i)=>curSeason-8+i).map(y=>`<option value="${y}" ${(p.joinSeason||curSeason)===y?"selected":""}>${seasonLabel(y)}</option>`).join("");
   showModal(`<h2>${id?"Modifica":"Nuovo"} giocatore</h2>
     <label class="field">Nome e cognome<input type="text" id="pName" value="${esc(p.name)}" placeholder="es. Mario Rossi"></label>
     <div class="row2">
       <label class="field">Squadra<select id="pTeam"><option value="calcio" ${p.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${p.team==="volley"?"selected":""}>🐦‍⬛ Istria Volley</option></select></label>
       <label class="field">Genere<select id="pGender" onchange="applyGenderDefaults()"><option value="M" ${p.gender==="M"?"selected":""}>Uomo</option><option value="F" ${p.gender==="F"?"selected":""}>Donna</option></select></label>
     </div>
+    <label class="field">Stagione di ingresso<select id="pJoinSeason">${joinSeasonOpts}</select></label>
     <div class="row2">
       <label class="field">Quota mensile (€)<input type="number" id="pQuota" step="0.01" min="0" value="${p.quotaMensile}"></label>
       <label class="field">Iscrizione (€)<input type="number" id="pIscr" step="0.01" min="0" value="${p.quotaIscrizione}"></label>
@@ -762,7 +776,7 @@ function applyGenderDefaults(){
 function savePlayer(){
   const name=document.getElementById("pName").value.trim();
   if(!name){ alert("Inserisci il nome."); return; }
-  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,tesserino:(document.getElementById("pTesserino").value||"").trim(),certScadenza:document.getElementById("pCert").value||"",attivo:document.getElementById("pAttivo").checked};
+  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,tesserino:(document.getElementById("pTesserino").value||"").trim(),certScadenza:document.getElementById("pCert").value||"",attivo:document.getElementById("pAttivo").checked,joinSeason:parseInt(document.getElementById("pJoinSeason").value)||defaultSeasonStart()};
   if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},iscrizioni:{},...o});
   save(); closeModal(); renderAll();
 }
@@ -857,9 +871,17 @@ function setCert(pid,val){ if(!isAdmin) return; const p=db.players.find(x=>x.id=
 /* ============ CALENDARIO ============ */
 let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
 function calMonthShift(d){ calMonth+=d; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} renderCalendario(); }
+function changeCalSeason(d){
+  calSeasonStart+=d;
+  // in vista mese, salta a settembre della nuova stagione
+  const view=document.querySelector('input[name="calview"]:checked')?.value||"lista";
+  if(view==="mese"){ calYear=calSeasonStart; calMonth=8; }
+  renderCalendario();
+}
 
 function renderCalendario(){
   const view=document.querySelector('input[name="calview"]:checked')?.value||"lista";
+  document.getElementById("calSeasonLabel").textContent="Stagione "+seasonLabel(calSeasonStart);
   document.getElementById("calMonthNav").style.display=view==="mese"?"flex":"none";
   document.getElementById("filterEvent").style.display=view==="risultati"?"none":"";
   if(view==="lista") renderEventsList();
@@ -870,7 +892,7 @@ function renderEvents(){ renderCalendario(); }
 
 function renderEventsList(){
   const fe=document.getElementById("filterEvent").value;
-  let list=db.events.filter(e=>inScope(e.team)&&(fe==="all"||e.kind===fe)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  let list=db.events.filter(e=>inScope(e.team)&&inSeason(e.date,calSeasonStart)&&(fe==="all"||e.kind===fe)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
   const el=document.getElementById("eventsList");
   if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun evento in calendario.</div></div>`; return; }
   const t=todayISO(),up=list.filter(e=>e.date>=t),pa=list.filter(e=>e.date<t).reverse();
@@ -891,7 +913,7 @@ function renderCalMonth(){
   // raccoglie eventi del mese
   const prefix=calYear+"-"+String(calMonth+1).padStart(2,"0");
   const evByDay={};
-  db.events.filter(e=>inScope(e.team)&&e.date.startsWith(prefix)).forEach(e=>{
+  db.events.filter(e=>inScope(e.team)&&inSeason(e.date,calSeasonStart)&&e.date.startsWith(prefix)).forEach(e=>{
     const day=parseInt(e.date.split("-")[2]);
     if(!evByDay[day]) evByDay[day]=[];
     evByDay[day].push(e);
@@ -924,7 +946,7 @@ function renderCalMonth(){
 function renderRisultati(){
   const el=document.getElementById("eventsList");
   // partite con risultato
-  const partite=db.events.filter(e=>inScope(e.team)&&e.kind==="partita"&&e.scoreFor!=null&&e.scoreAgainst!=null)
+  const partite=db.events.filter(e=>inScope(e.team)&&inSeason(e.date,calSeasonStart)&&e.kind==="partita"&&e.scoreFor!=null&&e.scoreAgainst!=null)
     .sort((a,b)=>b.date.localeCompare(a.date));
   if(!partite.length){ el.innerHTML=`<div class="card"><div class="empty">Nessuna partita con risultato registrata.</div></div>`; return; }
 
@@ -1120,9 +1142,9 @@ function loadDemo(){
   db={
     fields:["Campo Comunale","Palestra Centrale","Campo allenamento Nord"],
     players:[
-      {id:p1,name:"Mario Rossi",team:"calcio",gender:"M",quotaMensile:30,quotaIscrizione:20,payments:{},iscrizioni:{},certScadenza:new Date(y.getFullYear(),y.getMonth()+5,10).toISOString().slice(0,10)},
-      {id:p2,name:"Luca Bianchi",team:"calcio",gender:"M",quotaMensile:30,quotaIscrizione:20,payments:{},iscrizioni:{},certScadenza:new Date(y.getFullYear(),y.getMonth(),y.getDate()+15).toISOString().slice(0,10)},
-      {id:p3,name:"Giulia Verdi",team:"volley",gender:"F",quotaMensile:20,quotaIscrizione:50,payments:{},iscrizioni:{},certScadenza:new Date(y.getFullYear(),y.getMonth()-1,5).toISOString().slice(0,10)}
+      {id:p1,name:"Mario Rossi",team:"calcio",gender:"M",quotaMensile:30,quotaIscrizione:20,payments:{},iscrizioni:{},certScadenza:new Date(y.getFullYear(),y.getMonth()+5,10).toISOString().slice(0,10),joinSeason:s},
+      {id:p2,name:"Luca Bianchi",team:"calcio",gender:"M",quotaMensile:30,quotaIscrizione:20,payments:{},iscrizioni:{},certScadenza:new Date(y.getFullYear(),y.getMonth(),y.getDate()+15).toISOString().slice(0,10),joinSeason:s},
+      {id:p3,name:"Giulia Verdi",team:"volley",gender:"F",quotaMensile:20,quotaIscrizione:50,payments:{},iscrizioni:{},certScadenza:new Date(y.getFullYear(),y.getMonth()-1,5).toISOString().slice(0,10),joinSeason:s}
     ],
     events:[
       {id:uid(),kind:"allenamento",team:"calcio",date:todayISO(),time:"19:00",field:"Campo allenamento Nord",opponent:"",note:""},

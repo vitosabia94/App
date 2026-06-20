@@ -208,6 +208,8 @@
     <div class="toolbar">
       <button class="btn" onclick="openMove()">+ Nuovo movimento</button>
       <div class="grow"></div>
+      <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px">Da <input type="date" id="filterDateFrom" style="width:auto" onchange="renderMoves()"></label>
+      <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px">A <input type="date" id="filterDateTo" style="width:auto" onchange="renderMoves()"></label>
       <select id="filterType" style="width:auto" onchange="renderMoves()">
         <option value="all">Tutti i tipi</option><option value="entrata">Solo entrate</option><option value="uscita">Solo uscite</option>
       </select>
@@ -552,7 +554,8 @@ function movesTableHTML(list,clickable){
 }
 function renderMoves(){
   const ft=document.getElementById("filterType").value, fc=document.getElementById("filterClasse").value;
-  let list=db.moves.filter(m=>inScope(m.team)&&(ft==="all"||m.type===ft)&&(fc==="all"||(m.classe||"standard")===fc));
+  const fd=document.getElementById("filterDateFrom").value, ft2=document.getElementById("filterDateTo").value;
+  let list=db.moves.filter(m=>inScope(m.team)&&(ft==="all"||m.type===ft)&&(fc==="all"||(m.classe||"standard")===fc)&&(!fd||m.date>=fd)&&(!ft2||m.date<=ft2));
   list.sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById("movesTable").innerHTML=list.length?movesTableHTML(list,true):`<div class="empty">Nessun movimento.</div>`;
 }

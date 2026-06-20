@@ -819,9 +819,7 @@ function renderCerts(){
   el.innerHTML=`<div class="card" style="padding:6px 8px"><table><thead><tr><th>Giocatore</th><th>Tesserino</th><th>Squadra</th><th>Scadenza cert.</th><th>Stato</th></tr></thead><tbody>${
     list.map(p=>{ const s=certStatus(p.certScadenza);
       const extra=s.days==null?"":(s.days<0?`scaduto da ${-s.days} gg`:`tra ${s.days} gg`);
-      const dateCell=isAdmin
-        ? `<input type="date" value="${p.certScadenza}" style="width:auto;margin:0;padding:6px 8px" onchange="setCert('${p.id}',this.value)">`
-        : (p.certScadenza?fmtDate(p.certScadenza):"—");
+      const dateCell=isAdmin ? certDatePicker(p.id, p.certScadenza) : (p.certScadenza?fmtDate(p.certScadenza):"—");
       return `<tr>
         <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span></td>
         <td style="text-align:center;font-family:monospace;font-size:13px">${esc(p.tesserino||"—")}</td>
@@ -831,6 +829,28 @@ function renderCerts(){
       </tr>`;
     }).join("")
   }</tbody></table></div>`;
+}
+function certDatePicker(pid, val){
+  const [y,m,d]= val ? val.split("-") : ["","",""];
+  const mesi=["","Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+  const curY=new Date().getFullYear();
+  const giorni=`<select onchange="setCertParts('${pid}')" id="cd_d_${pid}" style="width:62px;margin:0 2px;padding:4px 2px">
+    <option value="">GG</option>${Array.from({length:31},(_,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${d==String(i+1).padStart(2,'0')?"selected":""}>${i+1}</option>`).join("")}
+  </select>`;
+  const mesi_sel=`<select onchange="setCertParts('${pid}')" id="cd_m_${pid}" style="width:68px;margin:0 2px;padding:4px 2px">
+    <option value="">MM</option>${mesi.slice(1).map((n,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${m==String(i+1).padStart(2,'0')?"selected":""}>${n}</option>`).join("")}
+  </select>`;
+  const anni=`<select onchange="setCertParts('${pid}')" id="cd_y_${pid}" style="width:78px;margin:0 2px;padding:4px 2px">
+    <option value="">AAAA</option>${Array.from({length:8},(_,i)=>`<option value="${curY+i}" ${y==String(curY+i)?"selected":""}>${curY+i}</option>`).join("")}
+  </select>`;
+  return `<div style="display:flex;align-items:center;gap:2px;flex-wrap:wrap">${giorni}${mesi_sel}${anni}</div>`;
+}
+function setCertParts(pid){
+  const d=document.getElementById("cd_d_"+pid)?.value;
+  const m=document.getElementById("cd_m_"+pid)?.value;
+  const y=document.getElementById("cd_y_"+pid)?.value;
+  const val=(d&&m&&y)?`${y}-${m}-${d}`:"";
+  setCert(pid, val);
 }
 function setCert(pid,val){ if(!isAdmin) return; const p=db.players.find(x=>x.id===pid); if(p){ p.certScadenza=val; save(); renderCerts(); } }
 

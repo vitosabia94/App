@@ -227,6 +227,8 @@
     <div class="toolbar">
       <div id="certSummary"></div>
       <div class="grow"></div>
+      <button class="btn ghost sm admin-only" onclick="document.getElementById('importCertFile').click()">⬆️ Importa certificati</button>
+      <input type="file" id="importCertFile" accept=".json,*/*" style="display:none" onchange="importCerts(event)">
       <select id="filterCert" style="width:auto" onchange="renderCerts()">
         <option value="all">Tutti</option>
         <option value="scaduto">Scaduti</option>
@@ -868,6 +870,32 @@ function setCertParts(pid){
   else if(!d&&!m&&!y) setCert(pid,"");
 }
 function setCert(pid,val){ if(!isAdmin) return; const p=db.players.find(x=>x.id===pid); if(p){ p.certScadenza=val; save(); renderCerts(); } }
+
+function importCerts(ev){
+  if(!isAdmin) return;
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onerror=()=>alert("Errore nella lettura del file.");
+  r.onload=async()=>{
+    try{
+      const list=JSON.parse(r.result);
+      if(!Array.isArray(list)) throw new Error("Il file deve essere un array JSON");
+      let updated=0, notFound=[];
+      list.forEach(row=>{
+        if(!row.name||!row.certScadenza) return;
+        const norm=s=>s.trim().toLowerCase();
+        const p=db.players.find(x=>norm(x.name)===norm(row.name));
+        if(p){ p.certScadenza=row.certScadenza; updated++; }
+        else notFound.push(row.name);
+      });
+      await save(); renderCerts();
+      let msg=`Aggiornati ${updated} certificati.`;
+      if(notFound.length) msg+=`\n\nGiocatori non trovati (controlla il nome):\n${notFound.join("\n")}`;
+      alert(msg);
+    }catch(e){ alert("Errore: "+(e.message||"File non valido.")); }
+  };
+  r.readAsText(f); ev.target.value="";
+}
 
 /* ============ CALENDARIO ============ */
 let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();

@@ -219,8 +219,6 @@
   <section class="view" id="view-giocatori">
     <div class="toolbar">
       <button class="btn admin-only" onclick="openPlayer()">+ Nuovo giocatore</button>
-      <button class="btn ghost sm admin-only" onclick="document.getElementById('importRoseFile').click()">⬆️ Importa rose</button>
-      <input type="file" id="importRoseFile" accept=".json,*/*" style="display:none" onchange="importRose(event)">
       <button class="btn ghost sm" onclick="changeSeason(-1)">‹</button>
       <b id="seasonLabel" style="min-width:120px;text-align:center"></b>
       <button class="btn ghost sm" onclick="changeSeason(1)">›</button>
@@ -242,8 +240,6 @@
     <div class="toolbar">
       <div id="certSummary"></div>
       <div class="grow"></div>
-      <button class="btn ghost sm admin-only" onclick="document.getElementById('importCertFile').click()">⬆️ Importa certificati</button>
-      <input type="file" id="importCertFile" accept=".json,*/*" style="display:none" onchange="importCerts(event)">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <label style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="checkbox" id="fc-scaduto" onchange="renderCerts()"> <span class="pill bad">Scaduti</span></label>
         <label style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="checkbox" id="fc-scadenza" onchange="renderCerts()"> <span class="pill warn">In scadenza</span></label>
@@ -260,8 +256,6 @@
     <div class="toolbar">
       <button class="btn admin-only" onclick="openEvent()">+ Nuovo evento</button>
       <button class="btn ghost admin-only" onclick="openFields()">⚙️ Gestione campi</button>
-      <button class="btn ghost sm admin-only" onclick="document.getElementById('importPartiteFile').click()">⬆️ Importa partite</button>
-      <input type="file" id="importPartiteFile" accept=".json,*/*" style="display:none" onchange="importPartite(event)">
       <div class="grow"></div>
       <div class="seg" id="calViewSeg">
         <input type="radio" name="calview" id="cv-lista" value="lista" checked onchange="renderCalendario()"><label for="cv-lista">📋 Lista</label>
@@ -290,11 +284,6 @@
   <!-- BACKUP -->
   <section class="view" id="view-impostazioni">
     <div class="card">
-      <h2>Sicurezza</h2>
-      <p class="hint">Ogni persona accede con il proprio utente. Qui puoi cambiare la tua password.</p>
-      <div class="toolbar"><button class="btn ghost" onclick="openChangePwd()">🔑 Cambia la mia password</button></div>
-    </div>
-    <div class="card">
       <h2>Backup &amp; Esportazione</h2>
       <p class="hint">I dati sono salvati nel database online condiviso. Conviene comunque esportare un backup ogni tanto come copia di sicurezza.</p>
       <div class="toolbar">
@@ -305,14 +294,6 @@
       <div class="toolbar">
         <button class="btn ghost" onclick="exportCSV()">📄 Esporta movimenti (CSV)</button>
         <button class="btn ghost" onclick="window.print()">🖨️ Stampa riepilogo / PDF</button>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Zona pericolosa</h2>
-      <p class="hint">Carica dati di esempio per provare, oppure cancella tutto.</p>
-      <div class="toolbar">
-        <button class="btn ghost" onclick="loadDemo()">Carica dati di esempio</button>
-        <button class="btn danger" onclick="wipeAll()">Cancella tutti i dati</button>
       </div>
     </div>
   </section>

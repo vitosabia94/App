@@ -587,12 +587,11 @@ function renderPlayers(){
   document.getElementById("seasonLabel").textContent="Stagione "+seasonStart+"/"+String(seasonStart+1).slice(2);
   const months=seasonMonths(seasonStart);
   let list=db.players.filter(p=>inScope(p.team)).sort((a,b)=>a.name.localeCompare(b.name));
-  if(!isAdmin){ const mp=myPlayer(); list=mp?[mp]:[]; }
   const inactiveCount=list.filter(p=>!p.attivo).length;
   const activeList=showInactive?list:list.filter(p=>p.attivo!==false);
   let totPaid=0,totDue=0;
   const el=document.getElementById("playersGrid");
-  if(!activeList.length){ el.innerHTML=`<div class="card"><div class="empty">${isAdmin?"Nessun giocatore. Aggiungine uno con <b>+ Nuovo giocatore</b>.":"Nessun profilo collegato al tuo account. Contatta la società."}</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }
+  if(!activeList.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore. ${isAdmin?"Aggiungine uno con <b>+ Nuovo giocatore</b>.":""}</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }
   let rows="";
   activeList.forEach(p=>{
     const isc=p.iscrizioni[seasonStart];
@@ -775,7 +774,6 @@ function certStatus(dateStr){
 function renderCerts(){
   const f=document.getElementById("filterCert").value;
   let list=db.players.filter(p=>inScope(p.team)&&p.attivo!==false);
-  if(!isAdmin){ const mp=myPlayer(); list=mp?[mp]:[]; }
   const counts={scaduto:0,scadenza:0,valido:0,mancante:0};
   list.forEach(p=>counts[certStatus(p.certScadenza).key]++);
   document.getElementById("certSummary").innerHTML=
@@ -786,7 +784,7 @@ function renderCerts(){
   list=list.filter(p=>f==="all"||certStatus(p.certScadenza).key===f)
            .sort((a,b)=>{ const A=a.certScadenza||"9999",B=b.certScadenza||"9999"; return A.localeCompare(B); });
   const el=document.getElementById("certList");
-  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">${isAdmin?"Nessun giocatore in questo gruppo.":"Nessun profilo collegato al tuo account. Contatta la società."}</div></div>`; return; }
+  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore in questo gruppo.</div></div>`; return; }
   el.innerHTML=`<div class="card" style="padding:6px 8px"><table><thead><tr><th>Giocatore</th><th>Squadra</th><th>Scadenza</th><th>Stato</th></tr></thead><tbody>${
     list.map(p=>{ const s=certStatus(p.certScadenza);
       const extra=s.days==null?"":(s.days<0?`scaduto da ${-s.days} gg`:`tra ${s.days} gg`);

@@ -104,9 +104,9 @@
   body.role-user .admin-only{display:none!important}
   /* monthly grid */
   .pgrid{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:14px}
-  .pgrid table{min-width:680px}
+  .pgrid table{min-width:420px}
   .pgrid th,.pgrid td{text-align:center;padding:5px 2px;font-size:12px}
-  .pgrid td.name,.pgrid th.name{text-align:left;position:sticky;left:0;background:#fff;font-weight:700;white-space:nowrap;min-width:100px}
+  .pgrid td.name,.pgrid th.name{text-align:left;position:sticky;left:0;background:#fff;font-weight:700;white-space:nowrap;min-width:80px;max-width:120px;overflow:hidden;text-overflow:ellipsis}
   .mcell{cursor:pointer;border-radius:6px;width:26px;height:26px;line-height:26px;margin:auto;font-weight:700;font-size:11px;user-select:none}
   .mcell.paid{background:#e3f6ec;color:var(--in);font-size:11px}
   .mcell.unpaid{background:#f4f5f7;color:#c2cad2}
@@ -674,7 +674,7 @@ function renderPlayers(){
     const inactiveBadge=p.attivo===false?` <span class="pill" style="background:#ccc;color:#555">Ex-giocatore</span>`:
       fuoriRosa?` <span class="pill" style="background:#ffe0b2;color:#7a4300">Fuori rosa</span>`:"";
     const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a><a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy)" title="Storico">📋</a>`:"";
-    rows+=`<tr style="${p.attivo===false||fuoriRosa?'opacity:0.5':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>${inactiveBadge}${pencil}</td>${iscCell}${cells}</tr>`;
+    rows+=`<tr style="${p.attivo===false||fuoriRosa?'opacity:0.5':''}"><td class="name" title="${esc(p.name)}">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>${inactiveBadge}${pencil}</td>${iscCell}${cells}</tr>`;
   });
   const toggleBtn=isAdmin&&outCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi non in rosa":"Mostra non in rosa ("+outCount+")"}</button>`:"";
   el.innerHTML=`<div style="margin-bottom:6px">${toggleBtn}</div><div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th title="${m.label} '${String(m.year).slice(2)}">${m.label.slice(0,2)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;

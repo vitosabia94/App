@@ -644,10 +644,10 @@ function renderPlayers(){
   document.getElementById("seasonLabel").textContent="Stagione "+seasonLabel(seasonStart);
   const months=seasonMonths(seasonStart);
   let list=db.players.filter(p=>inScope(p.team)&&(p.joinSeason||0)<=seasonStart).sort((a,b)=>a.name.localeCompare(b.name));
-  // ex-giocatori (attivo=false): nascosti nella stagione corrente/futura, sempre visibili nelle passate
-  const currentSeason=defaultSeasonStart();
-  const inactiveCount=list.filter(p=>p.attivo===false).length;
-  const activeList=(showInactive||seasonStart<currentSeason)?list:list.filter(p=>p.attivo!==false);
+  // "in rosa" = attivo nel club E non escluso da questa stagione
+  const isInRosa=p=>p.attivo!==false&&(p.seasonActive||{})[seasonStart]!==false;
+  const outCount=list.filter(p=>!isInRosa(p)).length;
+  const activeList=showInactive?list:list.filter(isInRosa);
   let totPaid=0,totDue=0;
   const el=document.getElementById("playersGrid");
   if(!activeList.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore. ${isAdmin?"Aggiungine uno con <b>+ Nuovo giocatore</b>.":""}</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }
@@ -678,8 +678,7 @@ function renderPlayers(){
     rows+=`<tr style="${p.attivo===false||fuoriRosa?'opacity:0.5':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>${inactiveBadge}
       <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} mesi${pencil}${toggleRosaBtn}</div></td>${iscCell}${cells}</tr>`;
   });
-  // il toggle ex-giocatori appare solo nella stagione corrente (nelle passate sono sempre visibili)
-  const toggleBtn=isAdmin&&inactiveCount>0&&seasonStart>=currentSeason?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi ex-giocatori":"Mostra ex-giocatori ("+inactiveCount+")"}</button>`:"";
+  const toggleBtn=isAdmin&&outCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi non in rosa":"Mostra non in rosa ("+outCount+")"}</button>`:"";
   el.innerHTML=`<div style="margin-bottom:6px">${toggleBtn}</div><div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   document.getElementById("quotaSummary").innerHTML=`Stagione: incassato <b>${eur(totPaid)}</b> / previsto <b>${eur(totDue)}</b> · manca <b style="color:var(--out)">${eur(totDue-totPaid)}</b>`;
 }

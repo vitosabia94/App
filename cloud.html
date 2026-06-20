@@ -433,6 +433,7 @@ function migrate(d){
     if(!p.iscrizioni) p.iscrizioni={};
     if(p.certScadenza==null) p.certScadenza="";
     if(p.email==null) p.email="";
+    if(p.attivo==null) p.attivo=true;
   });
   d.events.forEach(e=>{ if(e.kind==="partita"&&!e.scorers) e.scorers=[]; });
   return d;
@@ -442,7 +443,7 @@ function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(
 /* ============ STATE ============ */
 let isAdmin=true;
 let scope="all", editingMove=null, editingPlayer=null, editingEvent=null;
-let seasonStart=defaultSeasonStart();
+let seasonStart=defaultSeasonStart(), showInactive=false;
 function defaultSeasonStart(){ const n=new Date(); return n.getMonth()>=6?n.getFullYear():n.getFullYear()-1; }
 
 /* ============ HELPERS ============ */
@@ -573,17 +574,51 @@ function delMove(id){ if(confirm("Eliminare questo movimento?")){ db.moves=db.mo
 
 /* ============ GIOCATORI & QUOTE MENSILI ============ */
 function changeSeason(d){ seasonStart+=d; renderPlayers(); }
+function toggleShowInactive(){ showInactive=!showInactive; renderPlayers(); }
+function playerGoals(pid){
+  let tot=0;
+  db.events.forEach(e=>{ if(e.scorers) e.scorers.forEach(s=>{ if(s.playerId===pid) tot+=s.goals||1; }); });
+  return tot;
+}
+function playerGoalsBySeason(pid){
+  const seasons={};
+  db.events.forEach(e=>{
+    if(!e.scorers||!e.date) return;
+    const [y,m]=e.date.split("-").map(Number);
+    const sYear=(m>=9?y:y-1);
+    e.scorers.forEach(s=>{
+      if(s.playerId!==pid) return;
+      seasons[sYear]=(seasons[sYear]||0)+(s.goals||1);
+    });
+  });
+  return seasons;
+}
+function playerPaymentsBySeason(p){
+  const seasons={};
+  Object.entries(p.payments||{}).forEach(([key,v])=>{
+    const [y,m]=key.split("-").map(Number);
+    const sYear=(m>=9?y:y-1);
+    if(!seasons[sYear]) seasons[sYear]={paid:0,count:0};
+    seasons[sYear].paid+=v.amount||0; seasons[sYear].count++;
+  });
+  Object.entries(p.iscrizioni||{}).forEach(([sYear,v])=>{
+    if(!seasons[sYear]) seasons[sYear]={paid:0,count:0};
+    seasons[sYear].paid+=(v.amount||0);
+  });
+  return seasons;
+}
 function renderPlayers(){
   document.getElementById("seasonLabel").textContent="Stagione "+seasonStart+"/"+String(seasonStart+1).slice(2);
   const months=seasonMonths(seasonStart);
   let list=db.players.filter(p=>inScope(p.team)).sort((a,b)=>a.name.localeCompare(b.name));
   if(!isAdmin){ const mp=myPlayer(); list=mp?[mp]:[]; }
+  const inactiveCount=list.filter(p=>!p.attivo).length;
+  const activeList=showInactive?list:list.filter(p=>p.attivo!==false);
   let totPaid=0,totDue=0;
   const el=document.getElementById("playersGrid");
-  if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">${isAdmin?"Nessun giocatore. Aggiungine uno con <b>+ Nuovo giocatore</b>.":"Nessun profilo collegato al tuo account. Contatta la società."}</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }
+  if(!activeList.length){ el.innerHTML=`<div class="card"><div class="empty">${isAdmin?"Nessun giocatore. Aggiungine uno con <b>+ Nuovo giocatore</b>.":"Nessun profilo collegato al tuo account. Contatta la società."}</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }
   let rows="";
-  list.forEach(p=>{
-    // colonna iscrizione (una tantum a inizio stagione)
+  activeList.forEach(p=>{
     const isc=p.iscrizioni[seasonStart];
     totDue+=p.quotaIscrizione||0;
     let iCls="unpaid",iTxt="−";
@@ -600,11 +635,13 @@ function renderPlayers(){
       cells+=`<td><div class="mcell ${cls}" title="${mo.label} ${mo.year}${pay?' · '+eur(pay.amount):''}"${mClick}>${txt}</div></td>`;
     });
     const paidCount=months.filter(mo=>p.payments[mo.key]).length;
-    const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a>`:"";
-    rows+=`<tr><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?"♀":"♂"}</span>
+    const inactiveBadge=p.attivo===false?` <span class="pill" style="background:#ccc;color:#555">Inattivo</span>`:"";
+    const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a> <a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy)" title="Storico">📋</a>`:"";
+    rows+=`<tr style="${p.attivo===false?'opacity:0.55':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?'<span style="background:#e8d5f5;color:#7b3fa0;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">F</span>':'<span style="background:#d5eaf5;color:#1a6091;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">M</span>'}</span>${inactiveBadge}
       <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} mesi${pencil}</div></td>${iscCell}${cells}</tr>`;
   });
-  el.innerHTML=`<div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  const toggleBtn=isAdmin&&inactiveCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi inattivi":"Mostra inattivi ("+inactiveCount+")"}</button>`:"";
+  el.innerHTML=`<div style="margin-bottom:6px">${toggleBtn}</div><div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   document.getElementById("quotaSummary").innerHTML=`Stagione: incassato <b>${eur(totPaid)}</b> / previsto <b>${eur(totDue)}</b> · manca <b style="color:var(--out)">${eur(totDue-totPaid)}</b>`;
 }
 function toggleMonth(pid,key){
@@ -661,7 +698,8 @@ function confirmIscrizione(pid){
 function openPlayer(id){
   if(!isAdmin) return;
   editingPlayer=id?db.players.find(p=>p.id===id):null;
-  const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",gender:"M",quotaMensile:QUOTA_MENSILE.M,quotaIscrizione:QUOTA_ISCRIZIONE.M};
+  const p=editingPlayer||{name:"",team:scope==="volley"?"volley":"calcio",gender:"M",quotaMensile:QUOTA_MENSILE.M,quotaIscrizione:QUOTA_ISCRIZIONE.M,attivo:true};
+  const attivoChk=p.attivo!==false?"checked":"";
   showModal(`<h2>${id?"Modifica":"Nuovo"} giocatore</h2>
     <label class="field">Nome e cognome<input type="text" id="pName" value="${esc(p.name)}" placeholder="es. Mario Rossi"></label>
     <div class="row2">
@@ -674,8 +712,12 @@ function openPlayer(id){
     </div>
     <label class="field">Scadenza certificato medico<input type="date" id="pCert" value="${p.certScadenza||""}"></label>
     <label class="field">Email account giocatore (per il login in sola lettura)<input type="email" id="pEmail" value="${esc(p.email||"")}" placeholder="es. mario.rossi@email.it"></label>
-    <p class="hint">L'email collega la scheda all'account del giocatore: accedendo vedrà solo i propri pagamenti e certificato. Il genere imposta le quote standard (Uomo 30€/mese + 20€ iscr. · Donna 20€/mese + 50€ iscr.), comunque modificabili.</p>
-    <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
+    <label class="field" style="flex-direction:row;align-items:center;gap:10px;cursor:pointer">
+      <input type="checkbox" id="pAttivo" ${attivoChk} style="width:18px;height:18px;cursor:pointer">
+      <span>Giocatore attivo (deseleziona per segnare come ex-giocatore)</span>
+    </label>
+    <p class="hint">Il genere imposta le quote standard (Uomo 30€/mese + 20€ iscr. · Donna 20€/mese + 50€ iscr.), comunque modificabili. Gli ex-giocatori (inattivi) restano nello storico ma spariscono dalla griglia quote.</p>
+    <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button><button class="btn ghost" onclick="openPlayerHistory('${id}')">📋 Storico</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
 }
 function applyGenderDefaults(){
   const g=document.getElementById("pGender").value;
@@ -685,11 +727,36 @@ function applyGenderDefaults(){
 function savePlayer(){
   const name=document.getElementById("pName").value.trim();
   if(!name){ alert("Inserisci il nome."); return; }
-  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,certScadenza:document.getElementById("pCert").value||"",email:(document.getElementById("pEmail").value||"").trim()};
+  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,certScadenza:document.getElementById("pCert").value||"",email:(document.getElementById("pEmail").value||"").trim(),attivo:document.getElementById("pAttivo").checked};
   if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},iscrizioni:{},...o});
   save(); closeModal(); renderAll();
 }
-function delPlayer(id){ if(confirm("Eliminare il giocatore? (i movimenti già registrati restano)")){ db.players=db.players.filter(p=>p.id!==id); save(); closeModal(); renderAll(); } }
+function delPlayer(id){ if(confirm("Eliminare definitivamente il giocatore?\nSuggerimento: deseleziona 'Attivo' per conservare lo storico senza eliminare.")){ db.players=db.players.filter(p=>p.id!==id); save(); closeModal(); renderAll(); } }
+function openPlayerHistory(id){
+  const p=db.players.find(x=>x.id===id); if(!p) return;
+  const paySeasons=playerPaymentsBySeason(p);
+  const goalSeasons=p.team==="calcio"?playerGoalsBySeason(p.id):{};
+  const allSeasons=[...new Set([...Object.keys(paySeasons),...Object.keys(goalSeasons)])].sort((a,b)=>b-a);
+  let rows=allSeasons.map(sy=>{
+    const ps=paySeasons[sy]||{paid:0,count:0};
+    const gs=goalSeasons[sy]||0;
+    const label=sy+"/"+(parseInt(sy)+1).toString().slice(2);
+    const goalsCell=p.team==="calcio"?`<td style="text-align:center">${gs||"−"} ⚽</td>`:"";
+    return `<tr><td><b>${label}</b></td><td>${eur(ps.paid)}</td><td style="text-align:center">${ps.count}</td>${goalsCell}</tr>`;
+  }).join("");
+  if(!rows) rows=`<tr><td colspan="4" style="text-align:center;color:#aaa">Nessuno storico disponibile</td></tr>`;
+  const goalsHeader=p.team==="calcio"?`<th>Gol</th>`:"";
+  const totalGoals=p.team==="calcio"?playerGoals(p.id):null;
+  const goalSummary=p.team==="calcio"?`<p style="margin-top:8px">Totale gol in carriera: <b>${totalGoals} ⚽</b></p>`:"";
+  showModal(`<h2>📋 Storico — ${esc(p.name)}</h2>
+    <p style="margin-bottom:12px"><span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].name}</span> · ${p.gender==="F"?"♀ Donna":"♂ Uomo"} · <span style="color:${p.attivo!==false?"var(--in)":"#aaa"}">${p.attivo!==false?"Attivo":"Inattivo"}</span></p>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="border-bottom:2px solid #eee"><th style="text-align:left">Stagione</th><th>Pagato</th><th>Mesi</th>${goalsHeader}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${goalSummary}
+    <div class="modal-actions"><button class="btn ghost" onclick="openPlayer('${id}')">✏️ Modifica</button><button class="btn ghost" onclick="closeModal()">Chiudi</button></div>`);
+}
 
 /* ============ CERTIFICATI MEDICI ============ */
 function certStatus(dateStr){
@@ -702,7 +769,7 @@ function certStatus(dateStr){
 }
 function renderCerts(){
   const f=document.getElementById("filterCert").value;
-  let list=db.players.filter(p=>inScope(p.team));
+  let list=db.players.filter(p=>inScope(p.team)&&p.attivo!==false);
   if(!isAdmin){ const mp=myPlayer(); list=mp?[mp]:[]; }
   const counts={scaduto:0,scadenza:0,valido:0,mancante:0};
   list.forEach(p=>counts[certStatus(p.certScadenza).key]++);
@@ -722,7 +789,7 @@ function renderCerts(){
         ? `<input type="date" value="${p.certScadenza}" style="width:auto;margin:0;padding:6px 8px" onchange="setCert('${p.id}',this.value)">`
         : (p.certScadenza?fmtDate(p.certScadenza):"—");
       return `<tr>
-        <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?"♀":"♂"}</span></td>
+        <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?'<span style="background:#e8d5f5;color:#7b3fa0;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">F</span>':'<span style="background:#d5eaf5;color:#1a6091;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">M</span>'}</span></td>
         <td>${TEAMS[p.team].name}</td>
         <td>${dateCell}</td>
         <td><span class="pill ${s.cls}">${s.label}</span> <span class="hint">${extra}</span></td>

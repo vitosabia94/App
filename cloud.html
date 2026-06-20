@@ -212,6 +212,8 @@
   <section class="view" id="view-giocatori">
     <div class="toolbar">
       <button class="btn admin-only" onclick="openPlayer()">+ Nuovo giocatore</button>
+      <button class="btn ghost sm admin-only" onclick="document.getElementById('importRoseFile').click()">⬆️ Importa rose</button>
+      <input type="file" id="importRoseFile" accept=".json,*/*" style="display:none" onchange="importRose(event)">
       <button class="btn ghost sm" onclick="changeSeason(-1)">‹</button>
       <b id="seasonLabel" style="min-width:120px;text-align:center"></b>
       <button class="btn ghost sm" onclick="changeSeason(1)">›</button>
@@ -1154,6 +1156,75 @@ function openFields(){
 function addField(){ db.fields.push("Nuovo campo"); openFields(); }
 function rmField(i){ db.fields.splice(i,1); openFields(); }
 function saveFields(){ db.fields=[...document.querySelectorAll(".fEdit")].map(x=>x.value.trim()).filter(Boolean); if(!db.fields.length)db.fields=["Campo Comunale"]; save(); closeModal(); renderAll(); }
+
+/* ============ IMPORT ROSE ============ */
+function importRose(ev){
+  if(!isAdmin) return;
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onerror=()=>alert("Errore nella lettura del file.");
+  r.onload=async()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(d.type!=="update-rose"||!d.rose) throw new Error("Formato non valido");
+      const team=d.team||"calcio";
+      const seasons=Object.keys(d.rose).map(Number).sort();
+      const lastSeason=seasons[seasons.length-1];
+
+      // funzione di match: cerca per nome esatto o cognome
+      const findPlayer=name=>{
+        const n=name.trim().toLowerCase();
+        return db.players.find(p=>p.team===team&&(
+          p.name.toLowerCase()===n ||
+          p.name.toLowerCase().startsWith(n.split(" ")[0])&&p.name.toLowerCase().includes(n.split(" ").slice(-1)[0])
+        ));
+      };
+
+      let updated=0, notFound=new Set();
+
+      // per ogni stagione, costruisci Set di player IDs presenti
+      const rosterByYear={};
+      seasons.forEach(y=>{
+        rosterByYear[y]=new Set();
+        d.rose[String(y)].forEach(name=>{
+          const p=findPlayer(name);
+          if(p) rosterByYear[y].add(p.id);
+          else notFound.add(name);
+        });
+      });
+
+      db.players.filter(p=>p.team===team).forEach(p=>{
+        // trova stagioni in cui questo giocatore è presente
+        const activeSeasonsForPlayer=seasons.filter(y=>rosterByYear[y].has(p.id));
+        if(!activeSeasonsForPlayer.length) return; // giocatore non in nessuna lista, skip
+
+        // joinSeason = stagione più vecchia in cui appare
+        const earliest=activeSeasonsForPlayer[0];
+        if(!p.joinSeason||p.joinSeason>earliest) p.joinSeason=earliest;
+
+        // resetta seasonActive per le stagioni coperte dal file
+        if(!p.seasonActive) p.seasonActive={};
+        seasons.forEach(y=>{
+          if(rosterByYear[y].has(p.id)){
+            delete p.seasonActive[y]; // in rosa: rimuovi eventuale esclusione
+          } else if(y>=p.joinSeason){
+            p.seasonActive[y]=false;  // non in rosa: escludi
+          }
+        });
+
+        // se non è nella stagione più recente, non toccare attivo
+        // (l'admin decide se è ex-giocatore o tornerà)
+        updated++;
+      });
+
+      await save(); renderPlayers();
+      let msg=`Rose aggiornate: ${updated} giocatori.`;
+      if(notFound.size) msg+=`\n\nNomi non trovati in database:\n${[...notFound].join("\n")}\n\nAggiungi questi giocatori e ripeti l'import.`;
+      alert(msg);
+    }catch(e){ alert("Errore: "+(e.message||"File non valido.")); }
+  };
+  r.readAsText(f); ev.target.value="";
+}
 
 /* ============ IMPORT PARTITE ============ */
 function importPartite(ev){

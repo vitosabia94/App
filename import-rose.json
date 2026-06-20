@@ -1,0 +1,39 @@
+{
+  "type": "update-rose",
+  "team": "calcio",
+  "rose": {
+    "2023": [
+      "Avancini Guglielmo", "Benedetti Luca", "Capocasale Giuseppe",
+      "Carnio Niccolò", "Castellano Riccardo", "Cavallini Giacomo",
+      "Cecchi Francesco", "De Clemente Daniel", "Dell'Anna Lorenzo",
+      "Fiale Matteo", "Gionfriddo Simone", "Gueye Amet",
+      "Inghirami Francesco", "Malfetti Giovanni", "Manfredonia Gianmarco",
+      "Mara Federico", "Mocchi Luca", "Molè Pietro",
+      "Perri Giovanni", "Rezazadeh Sina", "Risi Carmine",
+      "Rossini Giovanni", "Scaramozza Eugenio", "Spinelli Brando",
+      "Torriti Niccolò", "Villani Gianluca"
+    ],
+    "2024": [
+      "Almanza Riccardo", "Avancini Guglielmo", "Benedetti Luca",
+      "Brettoni Francesco", "Bombagli Giovanni", "Capocasale Giuseppe",
+      "Castellano Riccardo", "Cavallini Giacomo", "Cecchi Francesco",
+      "De Clemente Daniel", "Fiale Matteo", "Gionfriddo Simone",
+      "Malfetti Giovanni", "Mocchi Luca", "Molè Pietro",
+      "Perri Giovanni", "Pistolesi Samuele", "Rezazadeh Sina",
+      "Rossini Giovanni", "Rotundo Rocco", "Scafuri Leonardo",
+      "Scaramozza Eugenio", "Spinelli Brando", "Torriti Niccolò",
+      "Villani Gianluca"
+    ],
+    "2025": [
+      "Barone Roberto", "Benedetti Luca", "Bouhajeb Semir",
+      "Capocasale Giuseppe", "Capria Francesco", "Cavallini Giacomo",
+      "Cecchi Francesco", "Franciò Letterio", "Giambastiani Luca",
+      "Gionfriddo Simone", "Guarneri Simone", "Malfetti Giovanni",
+      "Marini Luca", "Martelli Lorenzo", "Mocchi Luca",
+      "Molè Pietro", "Nardi Gianni", "Negro Riccardo",
+      "Perri Giovanni", "Pistolesi Samuele", "Prestianni Mario",
+      "Risi Carmine", "Rossini Giovanni", "Scafuri Leonardo",
+      "Sinaj Valerio", "Spinelli Brando", "Villani Gianluca"
+    ]
+  }
+}

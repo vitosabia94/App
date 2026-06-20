@@ -451,6 +451,7 @@ function migrate(d){
     if(p.email==null) p.email="";
     if(p.tesserino==null) p.tesserino="";
     if(p.attivo==null) p.attivo=true;
+    if(!p.seasonActive) p.seasonActive={};
   });
   d.events.forEach(e=>{ if(e.kind==="partita"&&!e.scorers) e.scorers=[]; });
   const curSeason=defaultSeasonStart();
@@ -597,6 +598,14 @@ function delMove(id){ if(confirm("Eliminare questo movimento?")){ db.moves=db.mo
 /* ============ GIOCATORI & QUOTE MENSILI ============ */
 function changeSeason(d){ seasonStart+=d; renderPlayers(); }
 function toggleShowInactive(){ showInactive=!showInactive; renderPlayers(); }
+function toggleSeasonRosa(pid){
+  if(!isAdmin) return;
+  const p=db.players.find(x=>x.id===pid); if(!p) return;
+  if(!p.seasonActive) p.seasonActive={};
+  if(p.seasonActive[seasonStart]===false) delete p.seasonActive[seasonStart];
+  else p.seasonActive[seasonStart]=false;
+  save(); renderPlayers();
+}
 function playerGoals(pid){
   let tot=0;
   db.events.forEach(e=>{ if(e.scorers) e.scorers.forEach(s=>{ if(s.playerId===pid) tot+=s.goals||1; }); });
@@ -633,7 +642,9 @@ function renderPlayers(){
   document.getElementById("seasonLabel").textContent="Stagione "+seasonLabel(seasonStart);
   const months=seasonMonths(seasonStart);
   let list=db.players.filter(p=>inScope(p.team)&&(p.joinSeason||0)<=seasonStart).sort((a,b)=>a.name.localeCompare(b.name));
-  const inactiveCount=list.filter(p=>!p.attivo).length;
+  // "fuori rosa" questa stagione (seasonActive[year]=false) — sempre visibili ma distinti
+  // "inattivi globali" (attivo=false) — nascosti di default come prima
+  const inactiveCount=list.filter(p=>p.attivo===false).length;
   const activeList=showInactive?list:list.filter(p=>p.attivo!==false);
   let totPaid=0,totDue=0;
   const el=document.getElementById("playersGrid");
@@ -657,12 +668,15 @@ function renderPlayers(){
       cells+=`<td><div class="mcell ${cls}" title="${mo.label} ${mo.year}${titleExtra}"${mClick}>${txt}</div></td>`;
     });
     const paidCount=months.filter(mo=>p.payments[mo.key]&&!p.payments[mo.key].assente).length;
-    const inactiveBadge=p.attivo===false?` <span class="pill" style="background:#ccc;color:#555">Inattivo</span>`:"";
+    const fuoriRosa=p.seasonActive&&p.seasonActive[seasonStart]===false;
+    const inactiveBadge=p.attivo===false?` <span class="pill" style="background:#ccc;color:#555">Ex-giocatore</span>`:
+      fuoriRosa?` <span class="pill" style="background:#ffe0b2;color:#7a4300">Fuori rosa</span>`:"";
+    const toggleRosaBtn=isAdmin&&p.attivo!==false?` <a href="#" onclick="toggleSeasonRosa('${p.id}');return false" style="color:var(--muted);font-size:11px" title="${fuoriRosa?'Includi in questa stagione':'Escludi da questa stagione'}">${fuoriRosa?'+ rosa':'− rosa'}</a>`:"";
     const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a> <a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy)" title="Storico">📋</a>`:"";
-    rows+=`<tr style="${p.attivo===false?'opacity:0.55':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>${inactiveBadge}
-      <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} mesi${pencil}</div></td>${iscCell}${cells}</tr>`;
+    rows+=`<tr style="${p.attivo===false||fuoriRosa?'opacity:0.5':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>${inactiveBadge}
+      <div class="hint">${eur(p.quotaMensile||0)}/mese · ${paidCount}/${months.length} mesi${pencil}${toggleRosaBtn}</div></td>${iscCell}${cells}</tr>`;
   });
-  const toggleBtn=isAdmin&&inactiveCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi inattivi":"Mostra inattivi ("+inactiveCount+")"}</button>`:"";
+  const toggleBtn=isAdmin&&inactiveCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi ex-giocatori":"Mostra ex-giocatori ("+inactiveCount+")"}</button>`:"";
   el.innerHTML=`<div style="margin-bottom:6px">${toggleBtn}</div><div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   document.getElementById("quotaSummary").innerHTML=`Stagione: incassato <b>${eur(totPaid)}</b> / previsto <b>${eur(totDue)}</b> · manca <b style="color:var(--out)">${eur(totDue-totPaid)}</b>`;
 }
@@ -767,9 +781,9 @@ function openPlayer(id){
     <label class="field">Scadenza certificato medico<input type="date" id="pCert" value="${p.certScadenza||""}"></label>
     <label class="field" style="flex-direction:row;align-items:center;gap:10px;cursor:pointer">
       <input type="checkbox" id="pAttivo" ${attivoChk} style="width:18px;height:18px;cursor:pointer">
-      <span>Giocatore attivo (deseleziona per segnare come ex-giocatore)</span>
+      <span>Fa ancora parte del club (deseleziona solo se ha lasciato definitivamente)</span>
     </label>
-    <p class="hint">Il genere imposta le quote standard (Uomo 30€/mese + 20€ iscr. · Donna 20€/mese + 50€ iscr.), comunque modificabili. Gli ex-giocatori (inattivi) restano nello storico ma spariscono dalla griglia quote.</p>
+    <p class="hint">Per escludere un giocatore da una singola stagione senza rimuoverlo, usa il link "− rosa" nella griglia quote. Deseleziona "Fa ancora parte del club" solo se ha lasciato il club per sempre: sparirà dalle stagioni future ma resterà nello storico.</p>
     <div class="modal-actions">${id?`<button class="btn danger" onclick="delPlayer('${id}')">Elimina</button><button class="btn ghost" onclick="openPlayerHistory('${id}')">📋 Storico</button>`:""}<button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn" onclick="savePlayer()">Salva</button></div>`);
 }
 function applyGenderDefaults(){

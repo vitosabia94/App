@@ -459,6 +459,8 @@ function migrate(d){
     if(p.certScadenzaNote==null) p.certScadenzaNote="";
     if(p.email==null) p.email="";
     if(p.tesserino==null) p.tesserino="";
+    if(p.numCasa==null) p.numCasa="";
+    if(p.numTrasferta==null) p.numTrasferta="";
     if(p.attivo==null) p.attivo=true;
     if(!p.seasonActive) p.seasonActive={};
   });
@@ -854,20 +856,27 @@ function renderAnagrafica(){
     .sort((a,b)=>a.name.localeCompare(b.name));
   const el=document.getElementById("anagTable"); if(!el) return;
   if(!list.length){ el.innerHTML=`<div class="empty">Nessun giocatore.</div>`; return; }
-  el.innerHTML=`<table><thead><tr><th>Giocatore</th><th>Squadra</th><th>N° Tesserino</th><th>Scadenza cert. medico</th><th>Stato</th></tr></thead><tbody>${
+  const hasCalcio=list.some(p=>p.team==="calcio");
+  const numCols=hasCalcio?`<th style="text-align:center">N° Casa</th><th style="text-align:center">N° Trasferta</th>`:"";
+  el.innerHTML=`<table><thead><tr><th>Giocatore</th><th>Squadra</th><th>N° Tesserino</th><th>Scadenza cert. medico</th><th>Stato</th>${numCols}</tr></thead><tbody>${
     list.map(p=>{
       const s=certStatus(p.certScadenza);
       const extra=s.days==null?"":(s.days<0?` · scaduto da ${-s.days} gg`:` · tra ${s.days} gg`);
-      const certCell=isAdmin?certDatePicker(p.id,p.certScadenza):(p.certScadenza?fmtDate(p.certScadenza):"—");
+      const certCell=p.certScadenza?fmtDate(p.certScadenza):"—";
       const tessCell=isAdmin
-        ?`<input type="text" value="${esc(p.tesserino||"")}" placeholder="—" style="width:110px;font-family:monospace;font-size:13px" onchange="setTesserino('${p.id}',this.value)">`
+        ?`<input type="text" value="${esc(p.tesserino||"")}" placeholder="—" style="width:100px;font-family:monospace;font-size:13px" onchange="setTesserino('${p.id}',this.value)">`
         :`<span style="font-family:monospace;font-size:13px">${esc(p.tesserino||"—")}</span>`;
+      const numInput=(field)=>isAdmin
+        ?`<input type="number" min="1" max="99" value="${esc(p[field]||"")}" placeholder="—" style="width:54px;text-align:center;font-weight:700;font-size:14px" onchange="setNumMaglia('${p.id}','${field}',this.value)">`
+        :`<span style="font-weight:700">${p[field]||"—"}</span>`;
+      const numCells=hasCalcio?`<td style="text-align:center">${p.team==="calcio"?numInput("numCasa"):""}</td><td style="text-align:center">${p.team==="calcio"?numInput("numTrasferta"):""}</td>`:"";
       return `<tr>
         <td style="font-weight:600">${esc(p.name)}</td>
         <td><span class="team-badge ${TEAMS[p.team].cls}">${TEAMS[p.team].name.toUpperCase()}</span></td>
         <td>${tessCell}</td>
-        <td>${certCell}</td>
+        <td style="font-family:monospace;font-size:13px">${certCell}</td>
         <td><span class="pill ${s.cls}">${s.label}</span><span style="font-size:11px;color:var(--muted)">${extra}</span></td>
+        ${numCells}
       </tr>`;
     }).join("")
   }</tbody></table>`;
@@ -876,6 +885,11 @@ function setTesserino(pid,val){
   if(!isAdmin) return;
   const p=db.players.find(x=>x.id===pid); if(!p) return;
   p.tesserino=val.trim(); save();
+}
+function setNumMaglia(pid,field,val){
+  if(!isAdmin) return;
+  const p=db.players.find(x=>x.id===pid); if(!p) return;
+  p[field]=val.trim(); save();
 }
 
 /* ============ CERTIFICATI MEDICI ============ */

@@ -51,6 +51,9 @@
   .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
   .pill.calcio{background:var(--yellow);color:var(--black);font-size:12px}
   .pill.volley{background:var(--black);color:var(--yellow);font-size:12px}
+  .team-badge{display:inline-block;font-size:11px;font-weight:800;padding:3px 8px;border-radius:5px;letter-spacing:.04em;white-space:nowrap}
+  .team-badge.calcio{background:var(--black);color:var(--yellow)}
+  .team-badge.volley{background:var(--yellow);color:var(--black)}
   .pill.standard{background:#f0ede6;color:#555}
   .pill.straordinaria{background:#fbe8dd;color:#7a4300}
   .pill.accessoria{background:#efe7f6;color:#6b4b8a}
@@ -541,7 +544,7 @@ function movesTableHTML(list,clickable){
   return `<table><thead><tr><th>Data</th><th>Squadra</th><th>Categoria</th><th>Tipologia</th><th class="num">Importo</th></tr></thead><tbody>${
     list.map(m=>`<tr class="${clickable?'clickable':''}" ${clickable?`onclick="openMove('${m.id}')"`:''}>
       <td>${fmtDate(m.date)}</td>
-      <td><span class="pill ${TEAMS[m.team].cls}">${TEAMS[m.team].emoji}</span></td>
+      <td><span class="team-badge ${TEAMS[m.team].cls}">${TEAMS[m.team].name.toUpperCase()}</span></td>
       <td>${esc(m.category)}${m.note?`<div class="hint">${esc(m.note)}</div>`:""}</td>
       <td><span class="pill ${m.classe||'standard'}">${CLASSI[m.classe||'standard']}</span></td>
       <td class="num ${m.type==="entrata"?"amt-in":"amt-out"}">${m.type==="entrata"?"+":"−"} ${eur(m.amount)}</td>
@@ -683,7 +686,7 @@ function renderPlayers(){
     const inactiveBadge=p.attivo===false?` <span class="pill" style="background:#ccc;color:#555">Ex-giocatore</span>`:
       fuoriRosa?` <span class="pill" style="background:#ffe0b2;color:#7a4300">Fuori rosa</span>`:"";
     const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a><a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy)" title="Storico">📋</a>`:"";
-    rows+=`<tr style="${p.attivo===false||fuoriRosa?'opacity:0.5':''}"><td class="name" title="${esc(p.name)}">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span>${inactiveBadge}${pencil}</td>${iscCell}${cells}</tr>`;
+    rows+=`<tr style="${p.attivo===false||fuoriRosa?'opacity:0.5':''}"><td class="name" title="${esc(p.name)}">${esc(p.name)}${inactiveBadge}${pencil}</td>${iscCell}${cells}</tr>`;
   });
   const toggleBtn=isAdmin&&outCount>0?`<button class="btn ghost sm" onclick="toggleShowInactive()" style="margin-left:8px">${showInactive?"Nascondi non in rosa":"Mostra non in rosa ("+outCount+")"}</button>`:"";
   el.innerHTML=`<div style="margin-bottom:6px">${toggleBtn}</div><div class="pgrid"><table><thead><tr><th class="name">Giocatore</th><th style="background:#fff7d6">Iscr.</th>${months.map(m=>`<th>${m.label}<div style="font-size:10px;color:#aab4bf">'${String(m.year).slice(2)}</div></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
@@ -825,7 +828,7 @@ function openPlayerHistory(id){
   const totalGoals=p.team==="calcio"?playerGoals(p.id):null;
   const goalSummary=p.team==="calcio"?`<p style="margin-top:8px">Totale gol in carriera: <b>${totalGoals} ⚽</b></p>`:"";
   showModal(`<h2>📋 Storico — ${esc(p.name)}</h2>
-    <p style="margin-bottom:12px"><span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].name}</span> · ${TEAMS[p.team].emoji} ${p.gender==="F"?"Donna":"Uomo"} · <span style="color:${p.attivo!==false?"var(--in)":"#aaa"}">${p.attivo!==false?"Attivo":"Inattivo"}</span></p>
+    <p style="margin-bottom:12px"><span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].name}</span> · ${p.gender==="F"?"Donna":"Uomo"} · <span style="color:${p.attivo!==false?"var(--in)":"#aaa"}">${p.attivo!==false?"Attivo":"Inattivo"}</span></p>
     <table style="width:100%;border-collapse:collapse">
       <thead><tr style="border-bottom:2px solid #eee"><th style="text-align:left">Stagione</th><th>Pagato</th><th>Mesi</th>${goalsHeader}</tr></thead>
       <tbody>${rows}</tbody>
@@ -862,7 +865,7 @@ function renderCerts(){
       const extra=s.days==null?"":(s.days<0?`scaduto da ${-s.days} gg`:`tra ${s.days} gg`);
       const dateCell=isAdmin ? certDatePicker(p.id, p.certScadenza) : (p.certScadenza?fmtDate(p.certScadenza):"—");
       return `<tr>
-        <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span></td>
+        <td>${esc(p.name)}</td>
         <td style="text-align:center;font-family:monospace;font-size:13px">${esc(p.tesserino||"—")}</td>
         <td>${TEAMS[p.team].name}</td>
         <td>${dateCell}</td>

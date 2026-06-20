@@ -924,7 +924,7 @@ function renderCerts(){
       return `<tr>
         <td>${esc(p.name)}</td>
         <td style="text-align:center;font-family:monospace;font-size:13px">${esc(p.tesserino||"—")}</td>
-        <td>${TEAMS[p.team].name}</td>
+        <td><span class="team-badge ${TEAMS[p.team].cls}">${TEAMS[p.team].name.toUpperCase()}</span></td>
         <td>${dateCell}</td>
         <td><span class="pill ${s.cls}">${s.label}</span> <span class="hint">${extra}</span></td>
       </tr>`;

@@ -644,10 +644,10 @@ function renderPlayers(){
   document.getElementById("seasonLabel").textContent="Stagione "+seasonLabel(seasonStart);
   const months=seasonMonths(seasonStart);
   let list=db.players.filter(p=>inScope(p.team)&&(p.joinSeason||0)<=seasonStart).sort((a,b)=>a.name.localeCompare(b.name));
-  // "fuori rosa" questa stagione (seasonActive[year]=false) — sempre visibili ma distinti
-  // "inattivi globali" (attivo=false) — nascosti di default come prima
+  // ex-giocatori (attivo=false): nascosti nella stagione corrente/futura, sempre visibili nelle passate
+  const currentSeason=defaultSeasonStart();
   const inactiveCount=list.filter(p=>p.attivo===false).length;
-  const activeList=showInactive?list:list.filter(p=>p.attivo!==false);
+  const activeList=(showInactive||seasonStart<currentSeason)?list:list.filter(p=>p.attivo!==false);
   let totPaid=0,totDue=0;
   const el=document.getElementById("playersGrid");
   if(!activeList.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore. ${isAdmin?"Aggiungine uno con <b>+ Nuovo giocatore</b>.":""}</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }

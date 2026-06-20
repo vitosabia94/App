@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#0d2b45" />
-<title>Gestione Istria — F.C. Istria & Istria Volley (Cloud)</title>
+<title>Gestione Istria — Istria Calcio & Istria Volley (Cloud)</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -163,7 +163,7 @@
   <img src="logo.svg" alt="Logo" class="logo">
   <div>
     <h1>Gestione Istria</h1>
-    <div class="sub">F.C. Istria &amp; Istria Volley — cassa unica</div>
+    <div class="sub">Istria Calcio &amp; Istria Volley — cassa unica</div>
   </div>
   <div class="grow"></div>
   <div class="scope" id="scope">
@@ -320,7 +320,7 @@ const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
    entrano come "giocatore" in sola lettura. Aggiungi qui altre email admin. */
 const ADMIN_EMAILS=["vitosabia3@gmail.com"];
 
-const TEAMS={calcio:{name:"F.C. Istria",emoji:"⚽",cls:"calcio"},volley:{name:"Istria Volley",emoji:"🏐",cls:"volley"}};
+const TEAMS={calcio:{name:"Istria Calcio",emoji:"⚽",cls:"calcio"},volley:{name:"Istria Volley",emoji:"🏐",cls:"volley"}};
 const CATS={
   entrata:["Quote giocatori","Iscrizioni","Sponsor","Incasso partite","Eventi/Tornei","Contributi","Altro"],
   uscita:["Arbitri","Affitto campo","Attrezzatura","Divise","Iscrizioni","Trasferte","Materiale sanitario","Cancelleria","Altro"]
@@ -396,7 +396,7 @@ function applyRole(){
     if(first) first.classList.add("active");
     document.getElementById("view-giocatori").classList.add("active");
   }else{
-    if(sub) sub.textContent="F.C. Istria & Istria Volley — cassa unica";
+    if(sub) sub.textContent="Istria Calcio & Istria Volley — cassa unica";
   }
 }
 
@@ -499,8 +499,8 @@ function renderDashboard(){
   const a=totals(null),c=totals("calcio"),v=totals("volley");
   document.getElementById("stats").innerHTML=`
     <div class="stat total"><div class="label">Saldo cassa unica</div><div class="value">${eur(a.bal)}</div><div class="meta">Entrate ${eur(a.inc)} · Uscite ${eur(a.out)}</div></div>
-    <div class="stat calcio"><div class="label">🐦‍⬛ F.C. Istria</div><div class="value">${eur(c.bal)}</div><div class="meta">Entrate ${eur(c.inc)} · Uscite ${eur(c.out)}</div></div>
-    <div class="stat volley"><div class="label">🐦‍⬛ Istria Volley</div><div class="value">${eur(v.bal)}</div><div class="meta">Entrate ${eur(v.inc)} · Uscite ${eur(v.out)}</div></div>`;
+    <div class="stat calcio"><div class="label">Istria Calcio</div><div class="value">${eur(c.bal)}</div><div class="meta">Entrate ${eur(c.inc)} · Uscite ${eur(c.out)}</div></div>
+    <div class="stat volley"><div class="label">Istria Volley</div><div class="value">${eur(v.bal)}</div><div class="meta">Entrate ${eur(v.inc)} · Uscite ${eur(v.out)}</div></div>`;
   drawMonthly();
   renderClassBreak();
   drawCategoryChart("chartOut","legendOut","uscita",["#d23b3b","#e8743b","#e0a82e","#b8503f","#8f3a4f","#6b4b8a","#c2453d"]);
@@ -568,7 +568,7 @@ function openMove(id){
       <input type="radio" name="mtype" id="mt-out" class="v-out" value="uscita" ${m.type==="uscita"?"checked":""} onchange="swapCats()"><label for="mt-out">－ Uscita</label>
     </div><div style="height:12px"></div>
     <div class="row2">
-      <label class="field">Squadra<select id="mTeam"><option value="calcio" ${m.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${m.team==="volley"?"selected":""}>🐦‍⬛ Istria Volley</option></select></label>
+      <label class="field">Squadra<select id="mTeam"><option value="calcio" ${m.team==="calcio"?"selected":""}>Istria Calcio</option><option value="volley" ${m.team==="volley"?"selected":""}>Istria Volley</option></select></label>
       <label class="field">Tipologia<select id="mClasse">${Object.keys(CLASSI).map(k=>`<option value="${k}" ${(m.classe||'standard')===k?"selected":""}>${CLASSI[k]}</option>`).join("")}</select></label>
     </div>
     <div class="row2">
@@ -781,7 +781,7 @@ function openPlayer(id){
   showModal(`<h2>${id?"Modifica":"Nuovo"} giocatore</h2>
     <label class="field">Nome e cognome<input type="text" id="pName" value="${esc(p.name)}" placeholder="es. Mario Rossi"></label>
     <div class="row2">
-      <label class="field">Squadra<select id="pTeam"><option value="calcio" ${p.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${p.team==="volley"?"selected":""}>🐦‍⬛ Istria Volley</option></select></label>
+      <label class="field">Squadra<select id="pTeam"><option value="calcio" ${p.team==="calcio"?"selected":""}>Istria Calcio</option><option value="volley" ${p.team==="volley"?"selected":""}>Istria Volley</option></select></label>
       <label class="field">Genere<select id="pGender" onchange="applyGenderDefaults()"><option value="M" ${p.gender==="M"?"selected":""}>Uomo</option><option value="F" ${p.gender==="F"?"selected":""}>Donna</option></select></label>
     </div>
     <label class="field">Stagione di ingresso<select id="pJoinSeason">${joinSeasonOpts}</select></label>
@@ -1104,7 +1104,7 @@ function openEvent(id){
   showModal(`<h2>${id?"Modifica":"Nuovo"} evento</h2>
     <div class="seg"><input type="radio" name="ekind" id="ek-a" class="v-team" value="allenamento" ${e.kind==="allenamento"?"checked":""} onchange="updateEventForm()"><label for="ek-a">🏃 Allenamento</label>
     <input type="radio" name="ekind" id="ek-p" class="v-team" value="partita" ${e.kind==="partita"?"checked":""} onchange="updateEventForm()"><label for="ek-p">🏆 Partita</label></div><div style="height:12px"></div>
-    <label class="field">Squadra<select id="eTeam" onchange="updateEventForm()"><option value="calcio" ${e.team==="calcio"?"selected":""}>🐦‍⬛ F.C. Istria</option><option value="volley" ${e.team==="volley"?"selected":""}>🐦‍⬛ Istria Volley</option></select></label>
+    <label class="field">Squadra<select id="eTeam" onchange="updateEventForm()"><option value="calcio" ${e.team==="calcio"?"selected":""}>Istria Calcio</option><option value="volley" ${e.team==="volley"?"selected":""}>Istria Volley</option></select></label>
     <div class="row2"><label class="field">Data<input type="date" id="eDate" value="${e.date}" onchange="updateEventForm()"></label><label class="field">Ora<input type="time" id="eTime" value="${e.time}"></label></div>
     <label class="field">Campo / Luogo<select id="eField">${fo}</select></label>
     <label class="field" id="oppWrap" style="${e.kind==="partita"?"":"display:none"}">Avversario<input type="text" id="eOpp" value="${esc(e.opponent)}"></label>

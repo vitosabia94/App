@@ -108,9 +108,10 @@
   .pgrid th,.pgrid td{text-align:center;padding:7px 6px;font-size:13px}
   .pgrid td.name,.pgrid th.name{text-align:left;position:sticky;left:0;background:#fff;font-weight:700;white-space:nowrap;min-width:140px}
   .mcell{cursor:pointer;border-radius:8px;width:34px;height:30px;line-height:30px;margin:auto;font-weight:700;font-size:12px;user-select:none}
-  .mcell.paid{background:#e3f6ec;color:var(--in)}
+  .mcell.paid{background:#e3f6ec;color:var(--in);font-size:11px}
   .mcell.unpaid{background:#f4f5f7;color:#c2cad2}
-  .mcell.partial{background:#fff5e0;color:#b9852b}
+  .mcell.partial{background:#fff5e0;color:#b9852b;font-size:11px}
+  .mcell.absent{background:#f0f0f0;color:#aaa;font-style:italic;font-size:11px}
   footer{text-align:center;color:var(--muted);font-size:12px;padding:18px}
   @media print{header,nav,.toolbar,.btn,footer,.lockbtn{display:none!important}.view{display:block!important}body{background:#fff}.card{box-shadow:none;break-inside:avoid}#lock{display:none!important}}
 </style>
@@ -603,13 +604,14 @@ function renderPlayers(){
     let cells="";
     months.forEach(mo=>{
       const pay=p.payments[mo.key];
-      totDue+=p.quotaMensile||0;
-      let cls="unpaid",txt="−";
-      if(pay){ totPaid+=pay.amount; cls=(p.quotaMensile&&pay.amount<p.quotaMensile)?"partial":"paid"; txt="✓"; }
+      let cls="unpaid",txt="−",titleExtra="";
+      if(pay && pay.assente){ cls="absent"; txt="A"; titleExtra=" · Assente"; }
+      else if(pay){ totPaid+=pay.amount; totDue+=p.quotaMensile||0; cls=(p.quotaMensile&&pay.amount<p.quotaMensile)?"partial":"paid"; txt=pay.amount>0?pay.amount+"":"✓"; titleExtra=" · "+eur(pay.amount); }
+      else { totDue+=p.quotaMensile||0; }
       const mClick=isAdmin?` onclick="toggleMonth('${p.id}','${mo.key}')"`:"";
-      cells+=`<td><div class="mcell ${cls}" title="${mo.label} ${mo.year}${pay?' · '+eur(pay.amount):''}"${mClick}>${txt}</div></td>`;
+      cells+=`<td><div class="mcell ${cls}" title="${mo.label} ${mo.year}${titleExtra}"${mClick}>${txt}</div></td>`;
     });
-    const paidCount=months.filter(mo=>p.payments[mo.key]).length;
+    const paidCount=months.filter(mo=>p.payments[mo.key]&&!p.payments[mo.key].assente).length;
     const inactiveBadge=p.attivo===false?` <span class="pill" style="background:#ccc;color:#555">Inattivo</span>`:"";
     const pencil=isAdmin?` <a href="#" onclick="openPlayer('${p.id}');return false" style="color:var(--navy)">✏️</a> <a href="#" onclick="openPlayerHistory('${p.id}');return false" style="color:var(--navy)" title="Storico">📋</a>`:"";
     rows+=`<tr style="${p.attivo===false?'opacity:0.55':''}"><td class="name">${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${p.gender==="F"?'<span style="background:#e8d5f5;color:#7b3fa0;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">F</span>':'<span style="background:#d5eaf5;color:#1a6091;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">M</span>'}</span>${inactiveBadge}
@@ -622,19 +624,47 @@ function renderPlayers(){
 function toggleMonth(pid,key){
   if(!isAdmin) return;
   const p=db.players.find(x=>x.id===pid);
-  if(p.payments[key]){
-    if(!confirm("Annullare il pagamento di questo mese? Verrà rimossa anche l'entrata in cassa.")) return;
-    const mvId=p.payments[key].moveId; db.moves=db.moves.filter(m=>m.id!==mvId); delete p.payments[key];
-    save(); renderAll(); return;
-  }
-  // chiedi importo (default quota mensile)
-  const def=p.quotaMensile||0;
   const [y,mm]=key.split("-"); const label=MONTHS[parseInt(mm)-1]+" "+y;
+  const pay=p.payments[key];
+
+  if(pay && pay.assente){
+    // era assente: rimuovi lo stato assente (torna a non pagato)
+    delete p.payments[key]; save(); renderAll(); return;
+  }
+  if(pay){
+    // già pagato: mostra opzioni
+    showModal(`<h2>${esc(p.name)} — ${label}</h2>
+      <p>Pagato: <b>${eur(pay.amount)}</b> il ${fmtDate(pay.date)}</p>
+      <div class="modal-actions">
+        <button class="btn danger" onclick="deleteMonth('${pid}','${key}')">Annulla pagamento</button>
+        <button class="btn ghost" onclick="markAbsent('${pid}','${key}')">Segna assente</button>
+        <button class="btn ghost" onclick="closeModal()">Chiudi</button>
+      </div>`);
+    return;
+  }
+  // non pagato: apri dialogo pagamento
+  const def=p.quotaMensile||0;
   showModal(`<h2>Pagamento ${esc(p.name)} — ${label}</h2>
     <label class="field">Importo (€)<input type="number" id="tmAmt" step="0.01" min="0" value="${def||""}"></label>
     <label class="field">Data pagamento<input type="date" id="tmDate" value="${todayISO()}"></label>
     <p class="hint">Crea un'entrata "Quote giocatori" (tipologia standard) nella cassa ${TEAMS[p.team].name}.</p>
-    <div class="modal-actions"><button class="btn ghost" onclick="closeModal()">Annulla</button><button class="btn green" onclick="confirmMonth('${pid}','${key}')">Registra</button></div>`);
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="markAbsent('${pid}','${key}')">Segna assente (quota €0)</button>
+      <button class="btn ghost" onclick="closeModal()">Annulla</button>
+      <button class="btn green" onclick="confirmMonth('${pid}','${key}')">Registra pagamento</button>
+    </div>`);
+}
+function deleteMonth(pid,key){
+  const p=db.players.find(x=>x.id===pid);
+  const mvId=p.payments[key].moveId; db.moves=db.moves.filter(m=>m.id!==mvId); delete p.payments[key];
+  save(); closeModal(); renderAll();
+}
+function markAbsent(pid,key){
+  const p=db.players.find(x=>x.id===pid);
+  // rimuovi eventuale movimento già registrato
+  if(p.payments[key]&&p.payments[key].moveId) db.moves=db.moves.filter(m=>m.id!==p.payments[key].moveId);
+  p.payments[key]={amount:0,assente:true};
+  save(); closeModal(); renderAll();
 }
 function confirmMonth(pid,key){
   const p=db.players.find(x=>x.id===pid);

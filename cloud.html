@@ -244,8 +244,18 @@
   <!-- ANAGRAFICA -->
   <section class="view" id="view-anagrafica">
     <div class="toolbar">
-      <input type="search" id="anagSearch" placeholder="Cerca giocatore…" style="width:220px" oninput="renderAnagrafica()">
+      <input type="search" id="anagSearch" placeholder="Cerca tesserato…" style="width:220px" oninput="renderAnagrafica()">
       <div class="grow"></div>
+      <select id="anagFilterRuolo" style="width:auto" onchange="renderAnagrafica()">
+        <option value="all">Tutti i ruoli</option>
+        <option value="giocatore">Giocatori</option>
+        <option value="dirigente">Dirigenti</option>
+      </select>
+      <select id="anagFilterAttivo" style="width:auto" onchange="renderAnagrafica()">
+        <option value="all">Attivi e non</option>
+        <option value="attivo">Solo attivi</option>
+        <option value="inattivo">Solo inattivi</option>
+      </select>
     </div>
     <div class="card" style="padding:6px 8px"><div id="anagTable"></div></div>
   </section>
@@ -850,8 +860,16 @@ function renderAnagrafica(){
   const el=document.getElementById("anagTable"); if(!el) return;
   try{
     const q=(document.getElementById("anagSearch")?.value||"").toLowerCase();
-    let list=db.players.filter(p=>inScope(p.team)&&(!q||p.name.toLowerCase().includes(q)))
-      .sort((a,b)=>a.name.localeCompare(b.name));
+    const fRuolo=document.getElementById("anagFilterRuolo")?.value||"all";
+    const fAttivo=document.getElementById("anagFilterAttivo")?.value||"all";
+    let list=db.players.filter(p=>{
+      if(!inScope(p.team)) return false;
+      if(q&&!p.name.toLowerCase().includes(q)) return false;
+      if(fRuolo!=="all"&&(p.ruolo||"giocatore")!==fRuolo) return false;
+      if(fAttivo==="attivo"&&p.attivo===false) return false;
+      if(fAttivo==="inattivo"&&p.attivo!==false) return false;
+      return true;
+    }).sort((a,b)=>a.name.localeCompare(b.name));
     if(!list.length){ el.innerHTML=`<div class="empty">Nessun giocatore.</div>`; return; }
     const hasCalcio=list.some(p=>p.team==="calcio");
     const numCols=hasCalcio?`<th style="text-align:center">N° Casa</th><th style="text-align:center">N° Trasferta</th>`:"";

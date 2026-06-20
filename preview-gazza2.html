@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Preview gazza sportiva</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #1a1a1a; padding: 40px; display:flex; gap:40px; flex-wrap:wrap; align-items:flex-start; }
+  .box { background: #222; border-radius: 20px; padding: 30px; text-align: center; }
+  .label { font-size: 13px; color: #f2c200; margin-top: 14px; font-weight: 700; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+
+<!-- VERSIONE A: testa gazza frontale aggressiva, stile sports -->
+<div class="box">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="200" height="200">
+  <!-- sfondo cerchio nero -->
+  <circle cx="120" cy="120" r="118" fill="#111"/>
+  <circle cx="120" cy="120" r="104" fill="none" stroke="#f2c200" stroke-width="8"/>
+
+  <!-- raggi di luce dietro -->
+  <g opacity="0.35">
+    <line x1="120" y1="16" x2="120" y2="55" stroke="#f2c200" stroke-width="6" stroke-linecap="round"/>
+    <line x1="162" y1="26" x2="148" y2="60" stroke="#f2c200" stroke-width="5" stroke-linecap="round"/>
+    <line x1="196" y1="54" x2="170" y2="78" stroke="#f2c200" stroke-width="5" stroke-linecap="round"/>
+    <line x1="78" y1="26" x2="92" y2="60" stroke="#f2c200" stroke-width="5" stroke-linecap="round"/>
+    <line x1="44" y1="54" x2="70" y2="78" stroke="#f2c200" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <!-- TESTA — forma ovale con cresta -->
+  <!-- cresta/ciuffo -->
+  <path d="M105 52 C100 38 96 28 104 20 C108 30 110 42 112 52Z" fill="#f2c200"/>
+  <path d="M120 48 C118 32 118 20 124 14 C126 26 126 38 126 48Z" fill="#f2c200"/>
+  <path d="M135 52 C140 38 144 28 136 20 C132 30 130 42 128 52Z" fill="#f2c200"/>
+
+  <!-- maschera testa -->
+  <ellipse cx="120" cy="118" rx="58" ry="64" fill="#f2c200"/>
+
+  <!-- zona bianca/grigio fronte centrale -->
+  <path d="M120 58 C136 62 148 74 152 90 L120 95 L88 90 C92 74 104 62 120 58Z" fill="#fff" opacity="0.12"/>
+
+  <!-- OCCHI arrabbiati -->
+  <!-- sopracciglio sinistro -->
+  <path d="M78 92 L104 88 L102 78 L72 84Z" fill="#111"/>
+  <!-- sopracciglio destro -->
+  <path d="M162 92 L136 88 L138 78 L168 84Z" fill="#111"/>
+
+  <!-- bulbo occhio sinistro -->
+  <ellipse cx="96" cy="105" rx="20" ry="18" fill="#111"/>
+  <ellipse cx="96" cy="105" rx="13" ry="12" fill="#f2c200"/>
+  <circle cx="96" cy="105" r="8" fill="#111"/>
+  <circle cx="92" cy="101" r="2.5" fill="#fff" opacity="0.8"/>
+
+  <!-- bulbo occhio destro -->
+  <ellipse cx="144" cy="105" rx="20" ry="18" fill="#111"/>
+  <ellipse cx="144" cy="105" rx="13" ry="12" fill="#f2c200"/>
+  <circle cx="144" cy="105" r="8" fill="#111"/>
+  <circle cx="140" cy="101" r="2.5" fill="#fff" opacity="0.8"/>
+
+  <!-- divisore naso -->
+  <path d="M112 92 L108 115 L120 110 L132 115 L128 92Z" fill="#111"/>
+
+  <!-- BECCO -->
+  <path d="M104 118 L120 145 L136 118 L120 125Z" fill="#111"/>
+  <!-- mascella superiore -->
+  <path d="M100 115 L120 138 L140 115 L130 112 L120 120 L110 112Z" fill="#f2c200"/>
+  <!-- mascella inferiore -->
+  <path d="M106 125 L120 148 L134 125 L120 132Z" fill="#c9a200"/>
+  <!-- linea becco -->
+  <line x1="108" y1="117" x2="132" y2="117" stroke="#111" stroke-width="2.5"/>
+
+  <!-- GUANCE / sfumatura bianca -->
+  <ellipse cx="82" cy="130" rx="16" ry="10" fill="#fff" opacity="0.18"/>
+  <ellipse cx="158" cy="130" rx="16" ry="10" fill="#fff" opacity="0.18"/>
+
+  <!-- COLLO / corpo stilizzato -->
+  <path d="M82 160 C70 168 60 178 58 192 L120 200 L182 192 C180 178 170 168 158 160 C146 156 134 154 120 154 C106 154 94 156 82 160Z" fill="#f2c200"/>
+  <!-- collare nero -->
+  <path d="M88 155 C90 148 96 143 104 140 L120 145 L136 140 C144 143 150 148 152 155 C140 150 130 148 120 148 C110 148 100 150 88 155Z" fill="#111"/>
+
+  <!-- PALLONE CALCIO (sinistra bassa) -->
+  <circle cx="68" cy="185" r="18" fill="#fff" stroke="#111" stroke-width="2"/>
+  <polygon points="68,169 72,175 70,181 64,181 62,175" fill="#111"/>
+  <polygon points="52,178 58,175 64,181 61,187 55,185" fill="#111"/>
+  <polygon points="84,178 78,175 70,181 73,187 80,185" fill="#111"/>
+  <polygon points="55,191 61,187 65,193 63,199 57,197" fill="#111"/>
+  <polygon points="81,191 75,187 71,193 73,199 80,196" fill="#111"/>
+
+  <!-- PALLONE VOLLEY (destra bassa) -->
+  <circle cx="172" cy="185" r="18" fill="#fff" stroke="#333" stroke-width="2"/>
+  <path d="M155 178 Q172 168 189 178" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M154 187 Q172 197 190 187" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M172 167 Q181 185 172 203" fill="none" stroke="#2471a3" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M155 179 Q164 185 155 193" fill="none" stroke="#2471a3" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M189 179 Q180 185 189 193" fill="none" stroke="#2471a3" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- ISTRIA testo -->
+  <text x="120" y="222" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="16" letter-spacing="5" fill="#f2c200">ISTRIA</text>
+</svg>
+<div class="label">VERSIONE A — Gazza frontale aggressiva</div>
+</div>
+
+<!-- VERSIONE B: stesso stile ma più geometrico/flat -->
+<div class="box">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="200" height="200">
+  <circle cx="120" cy="120" r="118" fill="#111"/>
+  <circle cx="120" cy="120" r="104" fill="none" stroke="#f2c200" stroke-width="6"/>
+
+  <!-- raggi -->
+  <g opacity="0.3" stroke="#f2c200" stroke-linecap="round">
+    <line x1="120" y1="16" x2="120" y2="50" stroke-width="7"/>
+    <line x1="156" y1="22" x2="143" y2="53" stroke-width="6"/>
+    <line x1="84" y1="22" x2="97" y2="53" stroke-width="6"/>
+    <line x1="192" y1="50" x2="168" y2="72" stroke-width="5"/>
+    <line x1="48" y1="50" x2="72" y2="72" stroke-width="5"/>
+  </g>
+
+  <!-- testa geometrica -->
+  <!-- forma base testa esagonale -->
+  <path d="M120 55 L158 75 L165 118 L148 155 L120 165 L92 155 L75 118 L82 75Z" fill="#f2c200"/>
+
+  <!-- cresta -->
+  <path d="M108 57 L112 38 L120 30 L128 38 L132 57Z" fill="#f2c200"/>
+  <path d="M110 57 L114 42 L120 35 L126 42 L130 57Z" fill="#c9a200"/>
+
+  <!-- maschera nera sugli occhi (sopracciglia aggressive) -->
+  <path d="M75 90 L104 85 L108 70 L80 72Z" fill="#111"/>
+  <path d="M165 90 L136 85 L132 70 L160 72Z" fill="#111"/>
+  <!-- banda nera centrale verticale -->
+  <rect x="113" y="68" width="14" height="50" fill="#111" rx="3"/>
+
+  <!-- occhi -->
+  <ellipse cx="94" cy="108" rx="19" ry="20" fill="#111"/>
+  <circle cx="94" cy="108" r="11" fill="#f2c200"/>
+  <circle cx="94" cy="108" r="6" fill="#111"/>
+  <circle cx="90" cy="104" r="2" fill="#fff" opacity="0.7"/>
+
+  <ellipse cx="146" cy="108" rx="19" ry="20" fill="#111"/>
+  <circle cx="146" cy="108" r="11" fill="#f2c200"/>
+  <circle cx="146" cy="108" r="6" fill="#111"/>
+  <circle cx="142" cy="104" r="2" fill="#fff" opacity="0.7"/>
+
+  <!-- becco geometrico -->
+  <path d="M108 128 L120 152 L132 128 L120 134Z" fill="#111"/>
+  <path d="M110 124 L120 145 L130 124Z" fill="#c9a200"/>
+
+  <!-- collo -->
+  <path d="M92 158 C80 164 72 172 70 184 L120 192 L170 184 C168 172 160 164 148 158 C136 153 124 151 120 151 C116 151 104 153 92 158Z" fill="#f2c200"/>
+  <path d="M96 154 L120 148 L144 154 L138 162 L120 158 L102 162Z" fill="#111"/>
+
+  <!-- pallone calcio -->
+  <circle cx="66" cy="184" r="17" fill="#fff" stroke="#111" stroke-width="2"/>
+  <polygon points="66,169 70,174 68,180 62,180 60,174" fill="#111"/>
+  <polygon points="51,177 57,174 62,180 59,186 53,184" fill="#111"/>
+  <polygon points="81,177 75,174 68,180 71,186 77,184" fill="#111"/>
+  <polygon points="53,190 59,186 63,191 61,197 55,195" fill="#111"/>
+  <polygon points="79,190 73,186 69,191 71,197 77,195" fill="#111"/>
+
+  <!-- pallone volley -->
+  <circle cx="174" cy="184" r="17" fill="#fff" stroke="#333" stroke-width="2"/>
+  <path d="M158 177 Q174 168 190 177" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M157 186 Q174 195 191 186" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M174 167 Q183 184 174 201" fill="none" stroke="#2471a3" stroke-width="2.5" stroke-linecap="round"/>
+
+  <text x="120" y="225" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="15" letter-spacing="6" fill="#f2c200">ISTRIA</text>
+</svg>
+<div class="label">VERSIONE B — Geometrica/flat</div>
+</div>
+
+<!-- VERSIONE C: su sfondo giallo stile crest tradizionale -->
+<div class="box">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="200" height="200">
+  <circle cx="120" cy="120" r="118" fill="#f2c200"/>
+  <circle cx="120" cy="120" r="104" fill="none" stroke="#111" stroke-width="12"/>
+
+  <!-- testa gazza (nero) -->
+  <ellipse cx="120" cy="108" rx="52" ry="56" fill="#111"/>
+  <!-- bianco fronte -->
+  <path d="M120 55 C134 60 144 70 148 84 L120 88 L92 84 C96 70 106 60 120 55Z" fill="#fff" opacity="0.1"/>
+
+  <!-- cresta -->
+  <path d="M106 57 L110 40 L120 32 L130 40 L134 57Z" fill="#111"/>
+
+  <!-- sopracciglia aggressive gialle -->
+  <path d="M78 88 L102 82 L106 70 L80 74Z" fill="#f2c200"/>
+  <path d="M162 88 L138 82 L134 70 L160 74Z" fill="#f2c200"/>
+
+  <!-- occhi -->
+  <circle cx="96" cy="105" r="18" fill="#f2c200"/>
+  <circle cx="96" cy="105" r="10" fill="#111"/>
+  <circle cx="92" cy="101" r="3" fill="#f2c200" opacity="0.5"/>
+
+  <circle cx="144" cy="105" r="18" fill="#f2c200"/>
+  <circle cx="144" cy="105" r="10" fill="#111"/>
+  <circle cx="140" cy="101" r="3" fill="#f2c200" opacity="0.5"/>
+
+  <!-- striscia bianca guance -->
+  <ellipse cx="78" cy="128" rx="14" ry="9" fill="#fff" opacity="0.25"/>
+  <ellipse cx="162" cy="128" rx="14" ry="9" fill="#fff" opacity="0.25"/>
+
+  <!-- becco -->
+  <path d="M106 120 L120 148 L134 120 L120 127Z" fill="#f2c200"/>
+  <line x1="108" y1="120" x2="132" y2="120" stroke="#111" stroke-width="2.5"/>
+
+  <!-- striscia collo bianca -->
+  <ellipse cx="120" cy="155" rx="30" ry="8" fill="#fff" opacity="0.2"/>
+
+  <!-- FC + ISTRIA -->
+  <text x="74" y="200" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="28" fill="#111">FC</text>
+  <text x="166" y="200" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="14" letter-spacing="1" fill="#111">ISTRIA</text>
+
+  <!-- palloni piccoli come decorazione -->
+  <circle cx="74" cy="178" r="10" fill="#111"/>
+  <polygon points="74,169 76,172 75,176 72,176 71,172" fill="#f2c200"/>
+  <circle cx="166" cy="178" r="10" fill="#111"/>
+  <path d="M158 175 Q166 170 174 175" fill="none" stroke="#f2c200" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M166 169 Q170 178 166 187" fill="none" stroke="#f2c200" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
+<div class="label">VERSIONE C — Su sfondo giallo, stile crest</div>
+</div>
+
+</body>
+</html>

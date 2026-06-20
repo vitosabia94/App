@@ -408,7 +408,9 @@ function migrate(d){
     if(p.quotaIscrizione==null) p.quotaIscrizione=QUOTA_ISCRIZIONE[p.gender];
     if(!p.iscrizioni) p.iscrizioni={};
     if(p.certScadenza==null) p.certScadenza="";
+    if(p.certScadenzaNote==null) p.certScadenzaNote="";
     if(p.email==null) p.email="";
+    if(p.tesserino==null) p.tesserino="";
     if(p.attivo==null) p.attivo=true;
   });
   d.events.forEach(e=>{ if(e.kind==="partita"&&!e.scorers) e.scorers=[]; });
@@ -714,6 +716,7 @@ function openPlayer(id){
       <label class="field">Quota mensile (€)<input type="number" id="pQuota" step="0.01" min="0" value="${p.quotaMensile}"></label>
       <label class="field">Iscrizione (€)<input type="number" id="pIscr" step="0.01" min="0" value="${p.quotaIscrizione}"></label>
     </div>
+    <label class="field">N° Tesserino<input type="text" id="pTesserino" value="${esc(p.tesserino||"")}" placeholder="es. 123456"></label>
     <label class="field">Scadenza certificato medico<input type="date" id="pCert" value="${p.certScadenza||""}"></label>
     <label class="field">Email account giocatore (per il login in sola lettura)<input type="email" id="pEmail" value="${esc(p.email||"")}" placeholder="es. mario.rossi@email.it"></label>
     <label class="field" style="flex-direction:row;align-items:center;gap:10px;cursor:pointer">
@@ -731,7 +734,7 @@ function applyGenderDefaults(){
 function savePlayer(){
   const name=document.getElementById("pName").value.trim();
   if(!name){ alert("Inserisci il nome."); return; }
-  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,certScadenza:document.getElementById("pCert").value||"",email:(document.getElementById("pEmail").value||"").trim(),attivo:document.getElementById("pAttivo").checked};
+  const o={name,team:document.getElementById("pTeam").value,gender:document.getElementById("pGender").value,quotaMensile:parseFloat(document.getElementById("pQuota").value)||0,quotaIscrizione:parseFloat(document.getElementById("pIscr").value)||0,tesserino:(document.getElementById("pTesserino").value||"").trim(),certScadenza:document.getElementById("pCert").value||"",email:(document.getElementById("pEmail").value||"").trim(),attivo:document.getElementById("pAttivo").checked};
   if(editingPlayer) Object.assign(editingPlayer,o); else db.players.push({id:uid(),payments:{},iscrizioni:{},...o});
   save(); closeModal(); renderAll();
 }
@@ -785,7 +788,7 @@ function renderCerts(){
            .sort((a,b)=>{ const A=a.certScadenza||"9999",B=b.certScadenza||"9999"; return A.localeCompare(B); });
   const el=document.getElementById("certList");
   if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore in questo gruppo.</div></div>`; return; }
-  el.innerHTML=`<div class="card" style="padding:6px 8px"><table><thead><tr><th>Giocatore</th><th>Squadra</th><th>Scadenza</th><th>Stato</th></tr></thead><tbody>${
+  el.innerHTML=`<div class="card" style="padding:6px 8px"><table><thead><tr><th>Giocatore</th><th>Tesserino</th><th>Squadra</th><th>Scadenza cert.</th><th>Stato</th></tr></thead><tbody>${
     list.map(p=>{ const s=certStatus(p.certScadenza);
       const extra=s.days==null?"":(s.days<0?`scaduto da ${-s.days} gg`:`tra ${s.days} gg`);
       const dateCell=isAdmin
@@ -793,6 +796,7 @@ function renderCerts(){
         : (p.certScadenza?fmtDate(p.certScadenza):"—");
       return `<tr>
         <td>${esc(p.name)} <span class="pill ${TEAMS[p.team].cls}">${TEAMS[p.team].emoji}</span></td>
+        <td style="text-align:center;font-family:monospace;font-size:13px">${esc(p.tesserino||"—")}</td>
         <td>${TEAMS[p.team].name}</td>
         <td>${dateCell}</td>
         <td><span class="pill ${s.cls}">${s.label}</span> <span class="hint">${extra}</span></td>

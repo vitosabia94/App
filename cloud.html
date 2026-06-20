@@ -218,7 +218,13 @@
       <b id="seasonLabel" style="min-width:120px;text-align:center"></b>
       <button class="btn ghost sm" onclick="changeSeason(1)">›</button>
       <div class="grow"></div>
-      <span class="hint" id="quotaSummary"></span>
+      <select id="filterPayMonth" style="width:auto" onchange="renderPlayers()"><option value="">Tutti i mesi</option></select>
+      <select id="filterPayStatus" style="width:auto" onchange="renderPlayers()">
+        <option value="all">Tutti</option>
+        <option value="paid">Pagato</option>
+        <option value="unpaid">Non pagato</option>
+        <option value="absent">Assente</option>
+      </select>
     </div>
     <div class="hint admin-only" style="margin-bottom:8px">Tocca una casella del mese per segnare/annullare il pagamento. Ogni pagamento entra automaticamente in cassa come "Quote giocatori".</div>
     <div id="playersGrid"></div>
@@ -643,11 +649,27 @@ function playerPaymentsBySeason(p){
 function renderPlayers(){
   document.getElementById("seasonLabel").textContent="Stagione "+seasonLabel(seasonStart);
   const months=seasonMonths(seasonStart);
+  // aggiorna opzioni mese nel filtro
+  const fmSel=document.getElementById("filterPayMonth");
+  const fmVal=fmSel.value;
+  fmSel.innerHTML=`<option value="">Tutti i mesi</option>`+months.map(m=>`<option value="${m.key}" ${fmVal===m.key?"selected":""}>${m.label} '${String(m.year).slice(2)}</option>`).join("");
+  const filterMonth=fmSel.value;
+  const filterStatus=document.getElementById("filterPayStatus").value;
   let list=db.players.filter(p=>inScope(p.team)&&(p.joinSeason||0)<=seasonStart).sort((a,b)=>a.name.localeCompare(b.name));
   // "in rosa" = attivo nel club E non escluso da questa stagione
   const isInRosa=p=>p.attivo!==false&&(p.seasonActive||{})[seasonStart]!==false;
   const outCount=list.filter(p=>!isInRosa(p)).length;
-  const activeList=showInactive?list:list.filter(isInRosa);
+  let activeList=showInactive?list:list.filter(isInRosa);
+  // filtro per mese e stato pagamento
+  if(filterMonth&&filterStatus!=="all"){
+    activeList=activeList.filter(p=>{
+      const pay=p.payments[filterMonth];
+      if(filterStatus==="paid")   return pay&&!pay.assente;
+      if(filterStatus==="unpaid") return !pay;
+      if(filterStatus==="absent") return pay&&pay.assente;
+      return true;
+    });
+  }
   let totPaid=0,totDue=0;
   const el=document.getElementById("playersGrid");
   if(!activeList.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore. ${isAdmin?"Aggiungine uno con <b>+ Nuovo giocatore</b>.":""}</div></div>`; document.getElementById("quotaSummary").textContent=""; return; }

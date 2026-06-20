@@ -237,13 +237,12 @@
       <div class="grow"></div>
       <button class="btn ghost sm admin-only" onclick="document.getElementById('importCertFile').click()">⬆️ Importa certificati</button>
       <input type="file" id="importCertFile" accept=".json,*/*" style="display:none" onchange="importCerts(event)">
-      <select id="filterCert" style="width:auto" onchange="renderCerts()">
-        <option value="all">Tutti</option>
-        <option value="scaduto">Scaduti</option>
-        <option value="scadenza">In scadenza</option>
-        <option value="valido">Validi</option>
-        <option value="mancante">Mancanti</option>
-      </select>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <label style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="checkbox" id="fc-scaduto" onchange="renderCerts()"> <span class="pill bad">Scaduti</span></label>
+        <label style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="checkbox" id="fc-scadenza" onchange="renderCerts()"> <span class="pill warn">In scadenza</span></label>
+        <label style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="checkbox" id="fc-valido" onchange="renderCerts()"> <span class="pill ok">Validi</span></label>
+        <label style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="checkbox" id="fc-mancante" onchange="renderCerts()"> <span class="pill none">Mancanti</span></label>
+      </div>
     </div>
     <div class="hint" style="margin-bottom:8px">Imposta la data di scadenza del certificato medico di ogni giocatore. Gli avvisi diventano gialli a 30 giorni dalla scadenza e rossi quando è scaduto.</div>
     <div id="certList"></div>
@@ -857,7 +856,7 @@ function certStatus(dateStr){
   return {key:"valido", label:"Valido", cls:"ok", days};
 }
 function renderCerts(){
-  const f=document.getElementById("filterCert").value;
+  const active=["scaduto","scadenza","valido","mancante"].filter(k=>document.getElementById("fc-"+k)?.checked);
   let list=db.players.filter(p=>inScope(p.team)&&p.attivo!==false);
   const counts={scaduto:0,scadenza:0,valido:0,mancante:0};
   list.forEach(p=>counts[certStatus(p.certScadenza).key]++);
@@ -866,7 +865,7 @@ function renderCerts(){
      <span class="pill warn" style="margin-right:6px">${counts.scadenza} in scadenza</span>
      <span class="pill ok" style="margin-right:6px">${counts.valido} validi</span>
      <span class="pill none">${counts.mancante} mancanti</span>`;
-  list=list.filter(p=>f==="all"||certStatus(p.certScadenza).key===f)
+  list=list.filter(p=>!active.length||active.includes(certStatus(p.certScadenza).key))
            .sort((a,b)=>{ const A=a.certScadenza||"9999",B=b.certScadenza||"9999"; return A.localeCompare(B); });
   const el=document.getElementById("certList");
   if(!list.length){ el.innerHTML=`<div class="card"><div class="empty">Nessun giocatore in questo gruppo.</div></div>`; return; }
